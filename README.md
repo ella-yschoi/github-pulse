@@ -50,15 +50,3 @@ npm install
 ```bash
 npm run dev
 ```
-
-## 📝 Cursor Rules
-
-이 프로젝트는 Cursor AI를 위한 개발 규칙이 포함되어 있습니다:
-
-- `.cursor/rules/` 디렉토리의 파일들은 개발 도구용입니다
-- 코드 리뷰나 프로덕션에는 영향을 주지 않습니다
-- 팀원들이 Cursor를 사용할 때 일관된 개발 경험을 제공합니다
-
-## 📄 라이선스
-
-MIT
