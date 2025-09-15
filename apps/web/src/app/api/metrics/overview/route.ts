@@ -177,10 +177,27 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // 6. 상위 리포지토리 정렬 (views 기준)
+    // 6. 14일 데이터 보장 (부족한 날짜는 0으로 채움)
+    const last14Days = [];
+    const today = new Date();
+
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+
+      const existingData = timeseries.find((item) => item.date === dateStr);
+      last14Days.push({
+        date: dateStr,
+        views: existingData?.views || 0,
+        unique: existingData?.unique || 0,
+      });
+    }
+
+    // 7. 상위 리포지토리 정렬 (views 기준)
     topReposWithTraffic.sort((a, b) => b.views_14d - a.views_14d);
 
-    // 7. 브랜딩 문구 생성
+    // 8. 브랜딩 문구 생성
     const topRepoName = topReposWithTraffic[0]?.full_name || '리포지토리 없음';
     const brandCopy = makeBrandCopy({
       starsTotal: totalStars,
@@ -197,7 +214,7 @@ export async function GET(request: NextRequest) {
         unique_14d: totalUnique14d,
         repos_count: repos.length,
       },
-      timeseries,
+      timeseries: last14Days,
       top_repos: topReposWithTraffic.slice(0, 5), // 상위 5개만
       brand_copy: brandCopy,
     };

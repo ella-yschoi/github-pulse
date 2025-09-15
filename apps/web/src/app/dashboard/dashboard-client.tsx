@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { ViewsChart } from '@/components/ViewsChart';
 
 // API 응답 타입 정의
 interface OverviewData {
@@ -69,10 +70,7 @@ export default function DashboardClient() {
                 </div>
               ))}
             </div>
-            <div className='bg-white p-6 rounded-lg shadow'>
-              <div className='h-6 bg-gray-200 rounded w-1/3 mb-4'></div>
-              <div className='h-64 bg-gray-200 rounded'></div>
-            </div>
+            <ViewsChart data={[]} loading={true} />
           </div>
         </div>
       </div>
@@ -162,14 +160,7 @@ export default function DashboardClient() {
         </div>
 
         {/* 차트 영역 */}
-        <div className='bg-white p-6 rounded-lg shadow mb-8'>
-          <h2 className='text-xl font-semibold text-gray-900 mb-4'>
-            14일간 Views 추이
-          </h2>
-          <div className='h-64 flex items-center justify-center text-gray-500'>
-            <p>차트 컴포넌트가 여기에 표시됨 (Recharts)</p>
-          </div>
-        </div>
+        <ViewsChart data={overviewData.timeseries} loading={!overviewData} />
 
         {/* 상위 리포지토리 */}
         <div className='bg-white p-6 rounded-lg shadow'>
