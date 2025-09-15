@@ -38,7 +38,12 @@ interface OverviewResponse {
     repos_count: number;
   };
   timeseries: { date: string; views: number; unique: number }[];
-  top_repos: { full_name: string; stars: number; views_14d: number }[];
+  top_repos: {
+    full_name: string;
+    stars: number;
+    views_14d: number;
+    sparkline_data: { date: string; views: number }[];
+  }[];
   brand_copy: string;
 }
 
@@ -124,6 +129,7 @@ export async function GET(request: NextRequest) {
       full_name: string;
       stars: number;
       views_14d: number;
+      sparkline_data: { date: string; views: number }[];
     }[] = [];
 
     // 모든 리포지토리의 stars 합계
@@ -149,11 +155,36 @@ export async function GET(request: NextRequest) {
         totalViews14d += views14d;
         totalUnique14d += unique14d;
 
+        // 스파크라인 데이터 생성 (14일간 views 데이터)
+        const sparklineData = traffic.views.map((view) => ({
+          date: new Date(view.timestamp).toISOString().split('T')[0],
+          views: view.count,
+        }));
+
+        // 14일 데이터 보장 (부족한 날짜는 0으로 채움)
+        const last14DaysSparkline = [];
+        const today = new Date();
+
+        for (let i = 13; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+
+          const existingData = sparklineData.find(
+            (item) => item.date === dateStr
+          );
+          last14DaysSparkline.push({
+            date: dateStr,
+            views: existingData?.views || 0,
+          });
+        }
+
         // 상위 리포지토리 목록에 추가
         topReposWithTraffic.push({
           full_name: repo.full_name,
           stars: repo.stargazers_count,
           views_14d: views14d,
+          sparkline_data: last14DaysSparkline,
         });
 
         // Timeseries 데이터 병합

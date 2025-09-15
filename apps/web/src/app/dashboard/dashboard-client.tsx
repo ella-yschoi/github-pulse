@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ViewsChart } from '@/components/ViewsChart';
+import { TopReposTable } from '@/components/TopReposTable';
 
 // API 응답 타입 정의
 interface OverviewData {
@@ -15,7 +16,12 @@ interface OverviewData {
     repos_count: number;
   };
   timeseries: { date: string; views: number; unique: number }[];
-  top_repos: { full_name: string; stars: number; views_14d: number }[];
+  top_repos: {
+    full_name: string;
+    stars: number;
+    views_14d: number;
+    sparkline_data: { date: string; views: number }[];
+  }[];
   brand_copy: string;
 }
 
@@ -71,6 +77,9 @@ export default function DashboardClient() {
               ))}
             </div>
             <ViewsChart data={[]} loading={true} />
+            <div className='mt-8'>
+              <TopReposTable repos={[]} loading={true} />
+            </div>
           </div>
         </div>
       </div>
@@ -162,40 +171,12 @@ export default function DashboardClient() {
         {/* 차트 영역 */}
         <ViewsChart data={overviewData.timeseries} loading={!overviewData} />
 
-        {/* 상위 리포지토리 */}
-        <div className='bg-white p-6 rounded-lg shadow'>
-          <h2 className='text-xl font-semibold text-gray-900 mb-4'>
-            상위 리포지토리
-          </h2>
-          <div className='space-y-4'>
-            {overviewData.top_repos.map((repo, index) => (
-              <div
-                key={repo.full_name}
-                className='flex items-center justify-between p-4 border rounded-lg'
-              >
-                <div className='flex items-center'>
-                  <span className='text-2xl font-bold text-gray-400 mr-4'>
-                    #{index + 1}
-                  </span>
-                  <div>
-                    <h3 className='font-medium text-gray-900'>
-                      {repo.full_name}
-                    </h3>
-                    <p className='text-sm text-gray-500'>
-                      ⭐ {repo.stars.toLocaleString()} • 👀{' '}
-                      {repo.views_14d.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div className='text-right'>
-                  <div className='text-sm text-gray-500'>14일 Views</div>
-                  <div className='font-semibold text-gray-900'>
-                    {repo.views_14d.toLocaleString()}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* 상위 리포지토리 테이블 */}
+        <div className='mt-8'>
+          <TopReposTable
+            repos={overviewData.top_repos}
+            loading={!overviewData}
+          />
         </div>
       </div>
     </div>
