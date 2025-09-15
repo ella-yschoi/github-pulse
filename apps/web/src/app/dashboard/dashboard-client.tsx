@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ViewsChart } from '@/components/ViewsChart';
 import { TopReposTable } from '@/components/TopReposTable';
+import ShareModal from '@/components/ShareModal';
 
 // API 응답 타입 정의
 interface OverviewData {
@@ -27,7 +28,7 @@ interface OverviewData {
 
 export default function DashboardClient() {
   const { data: session } = useSession();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // 실제 API 호출
   const { data: overviewData, error } = useQuery({
@@ -91,10 +92,66 @@ export default function DashboardClient() {
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
         {/* 헤더 */}
         <div className='mb-8'>
-          <h1 className='text-3xl font-bold text-gray-900'>
-            안녕하세요, {session?.user?.name}님! 👋
-          </h1>
-          <p className='mt-2 text-gray-600'>{overviewData.brand_copy}</p>
+          <div className='flex items-center justify-between'>
+            <div>
+              <h1 className='text-3xl font-bold text-gray-900'>
+                안녕하세요, {session?.user?.name}님! 👋
+              </h1>
+              <div className='mt-3 flex flex-wrap items-center gap-2'>
+                <span className='inline-flex items-center rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-200'>
+                  <span className='mr-1'>⭐</span>
+                  Total Stars:
+                  <span className='ml-1 font-semibold'>
+                    {overviewData.totals.stars_total.toLocaleString()}
+                  </span>
+                </span>
+
+                <span className='inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800 ring-1 ring-inset ring-blue-200'>
+                  <span className='mr-1'>👀</span>
+                  14일 Views:
+                  <span className='ml-1 font-semibold'>
+                    {overviewData.totals.views_14d.toLocaleString()}
+                  </span>
+                </span>
+
+                {overviewData.top_repos?.[0]?.full_name && (
+                  <a
+                    href={`https://github.com/${overviewData.top_repos[0].full_name}`}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='inline-flex max-w-full items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100'
+                    title={overviewData.top_repos[0].full_name}
+                  >
+                    <span className='mr-1'>📦</span>
+                    Top repo:
+                    <span className='ml-1 font-semibold truncate max-w-[220px]'>
+                      {overviewData.top_repos[0].full_name}
+                    </span>
+                  </a>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setIsShareModalOpen(true)}
+              className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white
+                cursor-pointer bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors'
+            >
+              <svg
+                className='w-4 h-4 mr-2'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z'
+                />
+              </svg>
+              공유하기
+            </button>
+          </div>
         </div>
 
         {/* KPI 카드들 */}
@@ -178,6 +235,25 @@ export default function DashboardClient() {
             loading={!overviewData}
           />
         </div>
+
+        {/* 공유 모달 */}
+        {overviewData && session?.user?.name && (
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            shareData={{
+              username: session.user.name,
+              stars: overviewData.totals.stars_total,
+              views: overviewData.totals.views_14d,
+              topRepo:
+                overviewData.top_repos[0]?.full_name || 'No repositories',
+              timeseries: overviewData.timeseries,
+              brandCopy: overviewData.brand_copy,
+              reposCount: overviewData.totals.repos_count,
+              top5: overviewData.top_repos.slice(0, 5),
+            }}
+          />
+        )}
       </div>
     </div>
   );

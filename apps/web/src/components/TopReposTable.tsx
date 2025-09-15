@@ -127,12 +127,15 @@ export function TopReposTable({ repos, loading = false }: TopReposTableProps) {
                       </div>
                     </div>
                     <div className='ml-4'>
-                      <div className='text-sm font-medium text-gray-900'>
+                      <a
+                        href={`https://github.com/${repo.full_name}`}
+                        target='_blank'
+                        rel='noreferrer'
+                        className='text-sm font-medium text-gray-900 hover:text-emerald-600'
+                        title={repo.full_name}
+                      >
                         {repo.full_name}
-                      </div>
-                      <div className='text-sm text-gray-500'>
-                        GitHub 리포지토리
-                      </div>
+                      </a>
                     </div>
                   </div>
                 </td>
