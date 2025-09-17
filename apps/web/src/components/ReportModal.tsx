@@ -17,7 +17,27 @@ export default function ReportModal({
   const [reportType] = useState<'weekly'>('weekly');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [generatedReport, setGeneratedReport] = useState<any>(null);
+  const [generatedReport, setGeneratedReport] = useState<{
+    success: boolean;
+    report: {
+      username: string;
+      week_start: string;
+      week_end: string;
+      total_stars: number;
+      total_views: number;
+      total_visitors: number;
+      top_repos: Array<{
+        name: string;
+        stars: number;
+        views: number;
+        visitors: number;
+      }>;
+      new_repos: number;
+      updated_repos: number;
+    };
+    pdfPath: string;
+    message: string;
+  } | null>(null);
 
   if (!isOpen) return null;
 

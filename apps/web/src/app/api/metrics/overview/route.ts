@@ -47,7 +47,7 @@ interface OverviewResponse {
   brand_copy: string;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 세션 확인
     const session = await getServerSession(authOptions);

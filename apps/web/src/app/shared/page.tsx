@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 
-export default function SharedPage() {
+function SharedContent() {
   const searchParams = useSearchParams();
   const [copied, setCopied] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('');
@@ -20,9 +20,9 @@ export default function SharedPage() {
   );
   const topRepo =
     searchParams.get('t') || searchParams.get('topRepo') || 'No repositories';
-  const reposCount = parseInt(
-    searchParams.get('r') || searchParams.get('repos') || '0'
-  );
+  // const reposCount = parseInt(
+  //   searchParams.get('r') || searchParams.get('repos') || '0'
+  // );
   const top3Raw = searchParams.get('top3') || '';
   const top3 = top3Raw
     .split(';')
@@ -204,5 +204,13 @@ export default function SharedPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SharedPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SharedContent />
+    </Suspense>
   );
 }

@@ -38,7 +38,7 @@ export async function gh(
   accessToken: string,
   path: string,
   init?: RequestInit
-): Promise<any> {
+): Promise<unknown> {
   const baseURL = 'https://api.github.com';
   const url = `${baseURL}${path}`;
 
@@ -118,4 +118,3 @@ export function isRateLimitError(error: unknown): error is RateLimitError {
 export function isGitHubAPIError(error: unknown): error is GitHubAPIError {
   return error instanceof GitHubAPIError;
 }
-
