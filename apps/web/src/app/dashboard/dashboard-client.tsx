@@ -1,11 +1,12 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ViewsChart } from '@/components/ViewsChart';
 import { TopReposTable } from '@/components/TopReposTable';
 import ShareModal from '@/components/ShareModal';
+import ReportModal from '@/components/ReportModal';
 
 // API 응답 타입 정의
 interface OverviewData {
@@ -29,6 +30,7 @@ interface OverviewData {
 export default function DashboardClient() {
   const { data: session } = useSession();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // 실제 API 호출
   const { data: overviewData, error } = useQuery({
@@ -131,26 +133,68 @@ export default function DashboardClient() {
                 )}
               </div>
             </div>
-            <button
-              onClick={() => setIsShareModalOpen(true)}
-              className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white
-                cursor-pointer bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors'
-            >
-              <svg
-                className='w-4 h-4 mr-2'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
+            <div className='flex space-x-3'>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className='inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700
+                  cursor-pointer bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors'
               >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z'
-                />
-              </svg>
-              공유하기
-            </button>
+                <svg
+                  className='w-4 h-4 mr-2'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
+                  />
+                </svg>
+                로그아웃
+              </button>
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white
+                  cursor-pointer bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors'
+              >
+                <svg
+                  className='w-4 h-4 mr-2'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z'
+                  />
+                </svg>
+                공유하기
+              </button>
+              <button
+                onClick={() => setIsReportModalOpen(true)}
+                className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white
+                  cursor-pointer bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors'
+              >
+                <svg
+                  className='w-4 h-4 mr-2'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                  />
+                </svg>
+                리포트 생성
+              </button>
+            </div>
           </div>
         </div>
 
@@ -252,6 +296,15 @@ export default function DashboardClient() {
               reposCount: overviewData.totals.repos_count,
               top5: overviewData.top_repos.slice(0, 5),
             }}
+          />
+        )}
+
+        {/* 리포트 모달 */}
+        {session?.user && (
+          <ReportModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            username={session.user.username || ''}
           />
         )}
       </div>
