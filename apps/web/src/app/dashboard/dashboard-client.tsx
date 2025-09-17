@@ -1,8 +1,12 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { ViewsChart } from '@/components/ViewsChart';
+import { TopReposTable } from '@/components/TopReposTable';
+import ShareModal from '@/components/ShareModal';
+import ReportModal from '@/components/ReportModal';
 
 // API 응답 타입 정의
 interface OverviewData {
@@ -14,13 +18,19 @@ interface OverviewData {
     repos_count: number;
   };
   timeseries: { date: string; views: number; unique: number }[];
-  top_repos: { full_name: string; stars: number; views_14d: number }[];
+  top_repos: {
+    full_name: string;
+    stars: number;
+    views_14d: number;
+    sparkline_data: { date: string; views: number }[];
+  }[];
   brand_copy: string;
 }
 
 export default function DashboardClient() {
   const { data: session } = useSession();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // 실제 API 호출
   const { data: overviewData, error } = useQuery({
@@ -69,9 +79,9 @@ export default function DashboardClient() {
                 </div>
               ))}
             </div>
-            <div className='bg-white p-6 rounded-lg shadow'>
-              <div className='h-6 bg-gray-200 rounded w-1/3 mb-4'></div>
-              <div className='h-64 bg-gray-200 rounded'></div>
+            <ViewsChart data={[]} loading={true} />
+            <div className='mt-8'>
+              <TopReposTable repos={[]} loading={true} />
             </div>
           </div>
         </div>
@@ -84,10 +94,108 @@ export default function DashboardClient() {
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
         {/* 헤더 */}
         <div className='mb-8'>
-          <h1 className='text-3xl font-bold text-gray-900'>
-            안녕하세요, {session?.user?.name}님! 👋
-          </h1>
-          <p className='mt-2 text-gray-600'>{overviewData.brand_copy}</p>
+          <div className='flex items-center justify-between'>
+            <div>
+              <h1 className='text-3xl font-bold text-gray-900'>
+                안녕하세요, {session?.user?.name}님! 👋
+              </h1>
+              <div className='mt-3 flex flex-wrap items-center gap-2'>
+                <span className='inline-flex items-center rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-200'>
+                  <span className='mr-1'>⭐</span>
+                  Total Stars:
+                  <span className='ml-1 font-semibold'>
+                    {overviewData.totals.stars_total.toLocaleString()}
+                  </span>
+                </span>
+
+                <span className='inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800 ring-1 ring-inset ring-blue-200'>
+                  <span className='mr-1'>👀</span>
+                  14일 Views:
+                  <span className='ml-1 font-semibold'>
+                    {overviewData.totals.views_14d.toLocaleString()}
+                  </span>
+                </span>
+
+                {overviewData.top_repos?.[0]?.full_name && (
+                  <a
+                    href={`https://github.com/${overviewData.top_repos[0].full_name}`}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='inline-flex max-w-full items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100'
+                    title={overviewData.top_repos[0].full_name}
+                  >
+                    <span className='mr-1'>📦</span>
+                    Top repo:
+                    <span className='ml-1 font-semibold truncate max-w-[220px]'>
+                      {overviewData.top_repos[0].full_name}
+                    </span>
+                  </a>
+                )}
+              </div>
+            </div>
+            <div className='flex space-x-3'>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className='inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700
+                  cursor-pointer bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors'
+              >
+                <svg
+                  className='w-4 h-4 mr-2'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
+                  />
+                </svg>
+                로그아웃
+              </button>
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white
+                  cursor-pointer bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors'
+              >
+                <svg
+                  className='w-4 h-4 mr-2'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z'
+                  />
+                </svg>
+                공유하기
+              </button>
+              <button
+                onClick={() => setIsReportModalOpen(true)}
+                className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white
+                  cursor-pointer bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors'
+              >
+                <svg
+                  className='w-4 h-4 mr-2'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                  />
+                </svg>
+                리포트 생성
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* KPI 카드들 */}
@@ -162,50 +270,43 @@ export default function DashboardClient() {
         </div>
 
         {/* 차트 영역 */}
-        <div className='bg-white p-6 rounded-lg shadow mb-8'>
-          <h2 className='text-xl font-semibold text-gray-900 mb-4'>
-            14일간 Views 추이
-          </h2>
-          <div className='h-64 flex items-center justify-center text-gray-500'>
-            <p>차트 컴포넌트가 여기에 표시됨 (Recharts)</p>
-          </div>
+        <ViewsChart data={overviewData.timeseries} loading={!overviewData} />
+
+        {/* 상위 리포지토리 테이블 */}
+        <div className='mt-8'>
+          <TopReposTable
+            repos={overviewData.top_repos}
+            loading={!overviewData}
+          />
         </div>
 
-        {/* 상위 리포지토리 */}
-        <div className='bg-white p-6 rounded-lg shadow'>
-          <h2 className='text-xl font-semibold text-gray-900 mb-4'>
-            상위 리포지토리
-          </h2>
-          <div className='space-y-4'>
-            {overviewData.top_repos.map((repo, index) => (
-              <div
-                key={repo.full_name}
-                className='flex items-center justify-between p-4 border rounded-lg'
-              >
-                <div className='flex items-center'>
-                  <span className='text-2xl font-bold text-gray-400 mr-4'>
-                    #{index + 1}
-                  </span>
-                  <div>
-                    <h3 className='font-medium text-gray-900'>
-                      {repo.full_name}
-                    </h3>
-                    <p className='text-sm text-gray-500'>
-                      ⭐ {repo.stars.toLocaleString()} • 👀{' '}
-                      {repo.views_14d.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div className='text-right'>
-                  <div className='text-sm text-gray-500'>14일 Views</div>
-                  <div className='font-semibold text-gray-900'>
-                    {repo.views_14d.toLocaleString()}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* 공유 모달 */}
+        {overviewData && session?.user?.name && (
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            shareData={{
+              username: session.user.name,
+              stars: overviewData.totals.stars_total,
+              views: overviewData.totals.views_14d,
+              topRepo:
+                overviewData.top_repos[0]?.full_name || 'No repositories',
+              timeseries: overviewData.timeseries,
+              brandCopy: overviewData.brand_copy,
+              reposCount: overviewData.totals.repos_count,
+              top5: overviewData.top_repos.slice(0, 5),
+            }}
+          />
+        )}
+
+        {/* 리포트 모달 */}
+        {session?.user && (
+          <ReportModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            username={session.user.username || ''}
+          />
+        )}
       </div>
     </div>
   );

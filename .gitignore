@@ -37,3 +37,19 @@ next-env.d.ts
 
 # Cursor Rules
 .cursor/
+
+# Backend
+apps/backend/node_modules/
+apps/backend/dist/
+apps/backend/reports/
+apps/backend/.env
+apps/backend/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db

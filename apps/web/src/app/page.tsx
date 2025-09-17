@@ -16,10 +16,17 @@ export default async function Home() {
   return (
     <div className='min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8'>
       <div className='sm:mx-auto sm:w-full sm:max-w-md'>
-        <div className='text-center'>
-          <h1 className='text-4xl font-bold text-gray-900 mb-2'>
-            GitHub Pulse
-          </h1>
+        <div className='text-center flex flex-col items-center'>
+          <div className='flex items-center gap-2 mb-2'>
+            <img
+              src='/images/gihub-pulse-logo-no-bg.png'
+              alt='GitHub Pulse Logo'
+              className='h-13 w-13 object-contain'
+            />
+            <h1 className='text-4xl font-bold text-emerald-500'>
+              GitHub Pulse
+            </h1>
+          </div>
           <p className='text-lg text-gray-600 mb-8'>
             개인 리포지토리 분석 대시보드
           </p>
@@ -53,7 +60,8 @@ export default async function Home() {
 
         <div className='mt-8 text-center'>
           <p className='text-sm text-gray-500'>
-            로그인하면 14일간의 리포지토리 트래픽과 스타 통계를 확인할 수 있습니다.
+            로그인하면 14일간의 리포지토리 트래픽과 스타 통계를 확인할 수
+            있습니다.
           </p>
         </div>
       </div>

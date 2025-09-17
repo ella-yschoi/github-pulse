@@ -38,11 +38,16 @@ interface OverviewResponse {
     repos_count: number;
   };
   timeseries: { date: string; views: number; unique: number }[];
-  top_repos: { full_name: string; stars: number; views_14d: number }[];
+  top_repos: {
+    full_name: string;
+    stars: number;
+    views_14d: number;
+    sparkline_data: { date: string; views: number }[];
+  }[];
   brand_copy: string;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 세션 확인
     const session = await getServerSession(authOptions);
@@ -124,6 +129,7 @@ export async function GET(request: NextRequest) {
       full_name: string;
       stars: number;
       views_14d: number;
+      sparkline_data: { date: string; views: number }[];
     }[] = [];
 
     // 모든 리포지토리의 stars 합계
@@ -149,11 +155,36 @@ export async function GET(request: NextRequest) {
         totalViews14d += views14d;
         totalUnique14d += unique14d;
 
+        // 스파크라인 데이터 생성 (14일간 views 데이터)
+        const sparklineData = traffic.views.map((view) => ({
+          date: new Date(view.timestamp).toISOString().split('T')[0],
+          views: view.count,
+        }));
+
+        // 14일 데이터 보장 (부족한 날짜는 0으로 채움)
+        const last14DaysSparkline = [];
+        const today = new Date();
+
+        for (let i = 13; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+
+          const existingData = sparklineData.find(
+            (item) => item.date === dateStr
+          );
+          last14DaysSparkline.push({
+            date: dateStr,
+            views: existingData?.views || 0,
+          });
+        }
+
         // 상위 리포지토리 목록에 추가
         topReposWithTraffic.push({
           full_name: repo.full_name,
           stars: repo.stargazers_count,
           views_14d: views14d,
+          sparkline_data: last14DaysSparkline,
         });
 
         // Timeseries 데이터 병합
@@ -177,10 +208,27 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // 6. 상위 리포지토리 정렬 (views 기준)
+    // 6. 14일 데이터 보장 (부족한 날짜는 0으로 채움)
+    const last14Days = [];
+    const today = new Date();
+
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+
+      const existingData = timeseries.find((item) => item.date === dateStr);
+      last14Days.push({
+        date: dateStr,
+        views: existingData?.views || 0,
+        unique: existingData?.unique || 0,
+      });
+    }
+
+    // 7. 상위 리포지토리 정렬 (views 기준)
     topReposWithTraffic.sort((a, b) => b.views_14d - a.views_14d);
 
-    // 7. 브랜딩 문구 생성
+    // 8. 브랜딩 문구 생성
     const topRepoName = topReposWithTraffic[0]?.full_name || '리포지토리 없음';
     const brandCopy = makeBrandCopy({
       starsTotal: totalStars,
@@ -197,7 +245,7 @@ export async function GET(request: NextRequest) {
         unique_14d: totalUnique14d,
         repos_count: repos.length,
       },
-      timeseries,
+      timeseries: last14Days,
       top_repos: topReposWithTraffic.slice(0, 5), // 상위 5개만
       brand_copy: brandCopy,
     };

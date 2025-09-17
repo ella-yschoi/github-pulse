@@ -10,7 +10,7 @@ interface CacheItem<T> {
 }
 
 class MemoryCache {
-  private cache = new Map<string, CacheItem<any>>();
+  private cache = new Map<string, CacheItem<unknown>>();
 
   /**
    * 캐시에서 데이터 조회
@@ -95,7 +95,7 @@ export function createCacheKey(
 export function createGitHubCacheKey(
   userId: string,
   endpoint: string,
-  params?: Record<string, any>
+  params?: Record<string, unknown>
 ): string {
   const paramString = params ? `:${JSON.stringify(params)}` : '';
   return createCacheKey('github', userId, endpoint, paramString);
@@ -109,4 +109,3 @@ export const CACHE_TTL = {
   MEDIUM: 300000, // 5분
   LONG: 1800000, // 30분
 } as const;
-
