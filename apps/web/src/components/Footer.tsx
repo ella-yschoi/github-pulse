@@ -11,28 +11,28 @@ export default function Footer() {
 
           {/* Links */}
           <div className='flex items-center space-x-4'>
-            <div className='flex items-center space-x-2'>
+            <Link
+              href='https://linkedin.com/in/ella-yschoi'
+              target='_blank'
+              rel='noopener noreferrer'
+              className='flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity'
+            >
               <FaLinkedin className='h-5 w-5 text-gray-600' />
-              <Link
-                href='https://linkedin.com/in/ella-yschoi'
-                target='_blank'
-                rel='noopener noreferrer'
-                className='text-sm text-gray-600 hover:text-gray-900 transition-colors'
-              >
+              <span className='text-sm text-gray-600 hover:text-gray-900 transition-colors'>
                 ella-yschoi
-              </Link>
-            </div>
-            <div className='flex items-center space-x-2'>
+              </span>
+            </Link>
+            <Link
+              href='https://github.com/ella-yschoi/github-pulse'
+              target='_blank'
+              rel='noopener noreferrer'
+              className='flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity'
+            >
               <FaGithub className='h-5 w-5 text-gray-600' />
-              <Link
-                href='https://github.com/ella-yschoi/github-pulse'
-                target='_blank'
-                rel='noopener noreferrer'
-                className='text-sm text-gray-600 hover:text-gray-900 transition-colors'
-              >
+              <span className='text-sm text-gray-600 hover:text-gray-900 transition-colors'>
                 github-pulse
-              </Link>
-            </div>
+              </span>
+            </Link>
           </div>
         </div>
       </div>
