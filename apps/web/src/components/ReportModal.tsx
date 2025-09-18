@@ -79,9 +79,7 @@ export default function ReportModal({
         username,
       });
 
-      const response = await fetch(
-        `/api/reports/download/${Date.now()}?${params}`
-      );
+      const response = await fetch(`/api/reports/download?${params}`);
 
       if (response.ok) {
         const blob = await response.blob();
