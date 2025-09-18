@@ -44,18 +44,15 @@ export default function ReportModal({
   const handleGenerateReport = async () => {
     setIsGenerating(true);
     try {
-      const response = await fetch(
-        '/api/reports/' + reportType,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username,
-          }),
-        }
-      );
+      const response = await fetch('/api/reports/' + reportType, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+        }),
+      });
 
       const data = await response.json();
 

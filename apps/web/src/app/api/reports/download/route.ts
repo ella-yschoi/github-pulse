@@ -7,11 +7,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'weekly';
     const username = searchParams.get('username') || '';
-    
+
     const backendUrl = `${BACKEND_URL}/api/reports/download/${Date.now()}?type=${type}&username=${username}`;
-    
+
     const response = await fetch(backendUrl);
-    
+
     if (!response.ok) {
       return NextResponse.json(
         { error: 'Failed to download report' },
@@ -20,11 +20,13 @@ export async function GET(request: NextRequest) {
     }
 
     const pdfBuffer = await response.arrayBuffer();
-    
+
     return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${type}-report-${username}-${new Date().toISOString().split('T')[0]}.pdf"`,
+        'Content-Disposition': `attachment; filename="${type}-report-${username}-${
+          new Date().toISOString().split('T')[0]
+        }.pdf"`,
       },
     });
   } catch (error) {
