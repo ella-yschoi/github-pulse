@@ -93,20 +93,46 @@ export class ReportController {
       }
 
       let report;
-      let pdfPath = null;
+      let pdfPath = null as string | null;
+      let pdfBuffer = null as Buffer | null;
 
       report = await this.reportService.generateWeeklyReport(
         username as string,
         start_date as string
       );
+      // 우선 메모리 버퍼 기반 스트리밍 시도 (서버리스/제한된 파일시스템 환경 대응)
       try {
-        pdfPath = await this.pdfService.generateWeeklyReportPDF(report);
-      } catch (pdfError: any) {
-        console.warn('PDF generation failed for download:', pdfError.message);
+        pdfBuffer = await this.pdfService.generateWeeklyReportPDFBuffer(report);
+      } catch (bufferErr: any) {
+        console.warn(
+          'PDF buffer generation failed, fallback to file path:',
+          bufferErr.message
+        );
+        try {
+          pdfPath = await this.pdfService.generateWeeklyReportPDF(report);
+        } catch (pdfError: any) {
+          console.warn(
+            'PDF file generation failed for download:',
+            pdfError.message
+          );
+        }
+      }
+
+      if (pdfBuffer) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="weekly-report-${username}-${report.week_start}.pdf"`
+        );
+        res.setHeader(
+          'Content-Length',
+          Buffer.byteLength(pdfBuffer).toString()
+        );
+        return res.status(200).send(pdfBuffer);
       }
 
       if (pdfPath) {
-        res.download(pdfPath, (err) => {
+        return res.download(pdfPath, (err) => {
           if (err) {
             console.error('Error downloading file:', err);
             res.status(500).json({
@@ -115,15 +141,15 @@ export class ReportController {
             });
           }
         });
-      } else {
-        // PDF 생성 실패 시 JSON 응답으로 대체
-        res.json({
-          success: false,
-          message: 'PDF generation failed, but report data is available',
-          report,
-          pdf_available: false,
-        });
       }
+
+      // 모든 방식 실패 시 JSON 응답
+      return res.status(502).json({
+        success: false,
+        message: 'PDF generation failed, but report data is available',
+        report,
+        pdf_available: false,
+      });
     } catch (error) {
       console.error('Error downloading report:', error);
       res.status(500).json({

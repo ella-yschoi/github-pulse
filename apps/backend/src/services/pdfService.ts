@@ -99,6 +99,71 @@ export class PDFService {
     }
   }
 
+  // Generate PDF as Buffer (no filesystem I/O) for environments where disk write may fail
+  async generateWeeklyReportPDFBuffer(report: WeeklyReport): Promise<Buffer> {
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-extensions',
+          '--disable-plugins',
+          '--no-first-run',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+        ],
+        timeout: 60000,
+        protocolTimeout: 60000,
+      });
+
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1200, height: 800 });
+      await page.setDefaultNavigationTimeout(30000);
+
+      const html = this.generateWeeklyReportHTML(report);
+      await page.setContent(html, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
+      });
+
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '15mm', right: '15mm', bottom: '15mm', left: '15mm' },
+        preferCSSPageSize: true,
+        displayHeaderFooter: false,
+      });
+
+      const buffer = Buffer.from(pdf);
+      if (buffer.length === 0) {
+        throw new Error('Generated PDF buffer is empty');
+      }
+      return buffer;
+    } catch (error) {
+      console.error('Error generating weekly report PDF buffer:', error);
+      throw new Error(
+        `Failed to generate PDF buffer: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    } finally {
+      if (browser) {
+        try {
+          await browser.close();
+        } catch (closeError) {
+          console.warn('Error closing browser:', closeError);
+        }
+      }
+    }
+  }
+
   private generateWeeklyReportHTML(report: WeeklyReport): string {
     return `
     <!DOCTYPE html>
