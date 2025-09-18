@@ -27,11 +27,33 @@ export async function GET(
       );
     }
 
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.toLowerCase().includes('application/pdf')) {
+      const text = await response.text();
+      try {
+        const data = JSON.parse(text);
+        return NextResponse.json(data, {
+          status: 502,
+          headers: { 'Cache-Control': 'no-store' },
+        });
+      } catch {
+        return new NextResponse(text, {
+          status: 502,
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Cache-Control': 'no-store',
+          },
+        });
+      }
+    }
+
     const pdfBuffer = await response.arrayBuffer();
 
     return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
+        'Content-Length': String(pdfBuffer.byteLength),
+        'Cache-Control': 'no-store',
         'Content-Disposition': `attachment; filename="${type}-report-${username}-${
           new Date().toISOString().split('T')[0]
         }.pdf"`,
