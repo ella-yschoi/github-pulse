@@ -45,7 +45,7 @@ export default function ReportModal({
     setIsGenerating(true);
     try {
       const response = await fetch(
-        'http://localhost:3001/api/reports/' + reportType,
+        '/api/reports/' + reportType,
         {
           method: 'POST',
           headers: {
@@ -83,7 +83,7 @@ export default function ReportModal({
       });
 
       const response = await fetch(
-        `http://localhost:3001/api/reports/download/${Date.now()}?${params}`
+        `/api/reports/download/${Date.now()}?${params}`
       );
 
       if (response.ok) {
