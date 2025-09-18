@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://43.201.71.223:3001';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { params: string[] } }
-) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'weekly';
