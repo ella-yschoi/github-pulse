@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://43.201.71.223:3001';
+const BACKEND_URL =
+  process.env.BACKEND_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'http://43.201.71.223:3001'
+    : 'http://localhost:3001');
 
 export async function GET(
   request: Request,

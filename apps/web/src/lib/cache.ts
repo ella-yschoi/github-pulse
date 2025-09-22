@@ -108,4 +108,6 @@ export const CACHE_TTL = {
   SHORT: 60000, // 1분
   MEDIUM: 300000, // 5분
   LONG: 1800000, // 30분
+  VERY_LONG: 3600000, // 1시간
+  ULTRA_LONG: 7200000, // 2시간
 } as const;

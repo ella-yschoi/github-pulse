@@ -1,7 +1,11 @@
 import { Request, Response } from 'express';
+import dotenv from 'dotenv';
 import { ReportService } from '../services/reportService';
 import { PDFService } from '../services/pdfService';
 import { ReportRequest } from '../types';
+
+// Load environment variables
+dotenv.config();
 
 export class ReportController {
   private reportService: ReportService;

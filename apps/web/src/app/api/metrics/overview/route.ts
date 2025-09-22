@@ -61,21 +61,54 @@ export async function GET() {
     const accessToken = session.accessToken as string;
     const userId = session.user?.email || 'unknown';
 
-    // 캐시 확인
+    // 캐시 확인 (더 긴 TTL 사용)
     const cacheKey = createGitHubCacheKey(userId, 'overview');
     const cachedData = cache.get<OverviewResponse>(cacheKey);
     if (cachedData) {
+      console.log('캐시에서 데이터 반환:', cacheKey);
       return NextResponse.json(cachedData, {
         headers: {
-          'Cache-Control': 's-maxage=60, stale-while-revalidate=300',
+          'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
+          'X-Cache': 'HIT',
         },
       });
     }
 
     // 1. 사용자 리포지토리 목록 조회
+    console.log('사용자 리포지토리 목록 조회 시작...');
+
+    // 임시: GitHub Personal Access Token이 없을 때 모킹 데이터 사용
+    if (!accessToken || accessToken === 'undefined') {
+      console.warn(
+        'GitHub Personal Access Token이 설정되지 않음. 모킹 데이터 사용'
+      );
+      const mockData: OverviewResponse = {
+        range: '14d',
+        totals: {
+          stars_total: 0,
+          views_14d: 0,
+          unique_14d: 0,
+          repos_count: 0,
+        },
+        timeseries: [],
+        top_repos: [],
+        brand_copy: 'GitHub Personal Access Token을 설정해주세요',
+      };
+
+      return NextResponse.json(mockData, {
+        headers: {
+          'Cache-Control': 's-maxage=60, stale-while-revalidate=300',
+          'X-Cache': 'MOCK',
+        },
+      });
+    }
+
     const repos = await gh(
       accessToken,
       '/user/repos?per_page=100&type=owner&sort=updated'
+    );
+    console.log(
+      `총 ${Array.isArray(repos) ? repos.length : 0}개 리포지토리 발견`
     );
 
     if (!Array.isArray(repos)) {
@@ -91,8 +124,13 @@ export async function GET() {
       )
       .slice(0, 10);
 
-    // 3. Traffic 데이터 병렬 조회
-    const trafficPromises = topRepos.map(async (repo: GitHubRepo) => {
+    // 3. Traffic 데이터 병렬 조회 (최대 5개로 제한하여 API 호출 최적화)
+    const limitedTopRepos = topRepos.slice(0, 5);
+    console.log(
+      `Traffic 데이터 조회 시작: ${limitedTopRepos.length}개 리포지토리`
+    );
+
+    const trafficPromises = limitedTopRepos.map(async (repo: GitHubRepo) => {
       try {
         const traffic = await gh(
           accessToken,
@@ -104,7 +142,13 @@ export async function GET() {
         };
       } catch (error) {
         // Traffic API 접근 불가 시 빈 데이터 반환
-        if (isGitHubAPIError(error) && error.status === 403) {
+        if (
+          isGitHubAPIError(error) &&
+          (error.status === 403 || error.status === 404)
+        ) {
+          console.warn(
+            `Traffic API 접근 불가: ${repo.full_name} (${error.status})`
+          );
           return {
             repo,
             traffic: {
@@ -114,11 +158,51 @@ export async function GET() {
             } as TrafficViews,
           };
         }
-        throw error;
+        // 레이트리밋 에러는 상위로 전파
+        if (isRateLimitError(error)) {
+          throw error;
+        }
+        // 기타 에러는 빈 데이터로 처리
+        console.warn(`Traffic API 에러: ${repo.full_name}`, error);
+        return {
+          repo,
+          traffic: {
+            count: 0,
+            uniques: 0,
+            views: [],
+          } as TrafficViews,
+        };
       }
     });
 
-    const trafficResults = await Promise.allSettled(trafficPromises);
+    // API 호출을 배치로 나누어 처리 (한 번에 2개씩)
+    const trafficResults = [];
+    const batchSize = 2;
+
+    console.log(
+      `배치 처리 시작: ${trafficPromises.length}개 요청을 ${batchSize}개씩 처리`
+    );
+
+    for (let i = 0; i < trafficPromises.length; i += batchSize) {
+      const batch = trafficPromises.slice(i, i + batchSize);
+      console.log(
+        `배치 ${Math.floor(i / batchSize) + 1} 처리 중... (${i + 1}-${Math.min(
+          i + batchSize,
+          trafficPromises.length
+        )})`
+      );
+
+      const batchResults = await Promise.allSettled(batch);
+      trafficResults.push(...batchResults);
+
+      // 배치 간 지연 시간 (API 호출 부하 감소)
+      if (i + batchSize < trafficPromises.length) {
+        console.log('배치 간 100ms 지연...');
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    console.log('Traffic 데이터 조회 완료');
 
     // 4. 데이터 집계
     let totalStars = 0;
@@ -250,27 +334,52 @@ export async function GET() {
       brand_copy: brandCopy,
     };
 
-    // 9. 캐시 저장
-    cache.set(cacheKey, responseData, CACHE_TTL.MEDIUM);
+    // 9. 캐시 저장 (더 긴 TTL 사용)
+    cache.set(cacheKey, responseData, CACHE_TTL.VERY_LONG);
+    console.log('데이터 캐시 저장:', cacheKey, 'TTL:', CACHE_TTL.VERY_LONG);
 
     return NextResponse.json(responseData, {
       headers: {
-        'Cache-Control': 's-maxage=60, stale-while-revalidate=300',
+        'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
+        'X-Cache': 'MISS',
       },
     });
   } catch (error) {
     console.error('Overview API Error:', error);
 
     if (isRateLimitError(error)) {
+      const retryAfter = Math.ceil(
+        (error.rateLimit?.reset || 0) - Date.now() / 1000
+      );
+      console.error('GitHub API 레이트리밋 에러:', {
+        remaining: error.rateLimit?.remaining,
+        limit: error.rateLimit?.limit,
+        reset: error.rateLimit?.reset,
+        retryAfter,
+      });
+
       return NextResponse.json(
         {
           error:
             'GitHub API 레이트리밋에 도달했습니다. 잠시 후 다시 시도해주세요.',
-          retryAfter: Math.ceil(
-            (error.rateLimit?.reset || 0) - Date.now() / 1000
-          ),
+          retryAfter,
+          rateLimit: {
+            remaining: error.rateLimit?.remaining || 0,
+            limit: error.rateLimit?.limit || 0,
+            reset: error.rateLimit?.reset || 0,
+          },
         },
-        { status: 429 }
+        {
+          status: 429,
+          headers: {
+            'Retry-After': retryAfter.toString(),
+            'X-RateLimit-Remaining': (
+              error.rateLimit?.remaining || 0
+            ).toString(),
+            'X-RateLimit-Limit': (error.rateLimit?.limit || 0).toString(),
+            'X-RateLimit-Reset': (error.rateLimit?.reset || 0).toString(),
+          },
+        }
       );
     }
 
