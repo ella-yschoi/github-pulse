@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL =
   process.env.BACKEND_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://43.201.71.223:3001'
-    : 'http://localhost:3001');
+  (process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3001'
+    : undefined);
 
 export async function POST(request: NextRequest) {
   try {
