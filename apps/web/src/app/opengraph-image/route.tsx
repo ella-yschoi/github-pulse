@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
       starsTotal,
       views14d,
       topRepo,
+      url: request.url,
     });
 
     return new ImageResponse(
