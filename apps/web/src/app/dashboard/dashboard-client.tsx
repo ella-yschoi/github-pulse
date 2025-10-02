@@ -93,24 +93,26 @@ export default function DashboardClient() {
     <div className='min-h-screen bg-gray-50'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
         {/* Header */}
-        <div className='mb-8'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <h1 className='text-3xl font-bold text-gray-900'>
+        <div className='mb-6 sm:mb-8'>
+          <div className='flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0'>
+            <div className='flex-1'>
+              <h1 className='text-2xl sm:text-3xl font-bold text-gray-900'>
                 Hello, {session?.user?.name}! 👋
               </h1>
               <div className='mt-3 flex flex-wrap items-center gap-2'>
-                <span className='inline-flex items-center rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-200'>
+                <span className='inline-flex items-center rounded-full bg-yellow-50 px-2 sm:px-3 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-200'>
                   <span className='mr-1'>⭐</span>
-                  Total Stars:
+                  <span className='hidden sm:inline'>Total Stars: </span>
+                  <span className='sm:hidden'>Stars: </span>
                   <span className='ml-1 font-semibold'>
                     {overviewData.totals.stars_total.toLocaleString()}
                   </span>
                 </span>
 
-                <span className='inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800 ring-1 ring-inset ring-blue-200'>
+                <span className='inline-flex items-center rounded-full bg-blue-50 px-2 sm:px-3 py-1 text-xs font-medium text-blue-800 ring-1 ring-inset ring-blue-200'>
                   <span className='mr-1'>👀</span>
-                  14-day Views:
+                  <span className='hidden sm:inline'>14-day Views: </span>
+                  <span className='sm:hidden'>Views: </span>
                   <span className='ml-1 font-semibold'>
                     {overviewData.totals.views_14d.toLocaleString()}
                   </span>
@@ -121,19 +123,88 @@ export default function DashboardClient() {
                     href={`https://github.com/${overviewData.top_repos[0].full_name}`}
                     target='_blank'
                     rel='noreferrer'
-                    className='inline-flex max-w-full items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100'
+                    className='inline-flex max-w-full items-center rounded-full bg-gray-100 px-2 sm:px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100'
                     title={overviewData.top_repos[0].full_name}
                   >
                     <span className='mr-1'>📦</span>
-                    Top repo:
-                    <span className='ml-1 font-semibold truncate max-w-[220px]'>
+                    <span className='hidden sm:inline'>Top repo: </span>
+                    <span className='sm:hidden'>Top: </span>
+                    <span className='ml-1 font-semibold truncate max-w-[120px] sm:max-w-[220px]'>
                       {overviewData.top_repos[0].full_name}
                     </span>
                   </a>
                 )}
               </div>
             </div>
-            <div className='flex space-x-3'>
+
+            {/* Mobile button layout */}
+            <div className='flex flex-col space-y-2 sm:hidden'>
+              <div className='flex space-x-2'>
+                <button
+                  onClick={() => setIsShareModalOpen(true)}
+                  className='flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white
+                    cursor-pointer bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors'
+                >
+                  <svg
+                    className='w-4 h-4 mr-1'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z'
+                    />
+                  </svg>
+                  Share
+                </button>
+                <button
+                  onClick={() => setIsReportModalOpen(true)}
+                  className='flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white
+                    cursor-pointer bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors'
+                >
+                  <svg
+                    className='w-4 h-4 mr-1'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                    />
+                  </svg>
+                  Report
+                </button>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className='w-full inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700
+                  cursor-pointer bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors'
+              >
+                <svg
+                  className='w-4 h-4 mr-2'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
+                  />
+                </svg>
+                Logout
+              </button>
+            </div>
+
+            {/* Desktop button layout */}
+            <div className='hidden sm:flex space-x-3'>
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
                 className='inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700
@@ -199,71 +270,77 @@ export default function DashboardClient() {
         </div>
 
         {/* KPI cards */}
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
-          <div className='bg-white p-6 rounded-lg shadow'>
-            <div className='flex items-center'>
-              <div className='flex-shrink-0'>
+        <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8'>
+          <div className='bg-white p-4 sm:p-6 rounded-lg shadow'>
+            <div className='flex flex-col sm:flex-row sm:items-center'>
+              <div className='flex-shrink-0 mb-2 sm:mb-0'>
                 <div className='w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center'>
                   <span className='text-yellow-600 text-lg'>⭐</span>
                 </div>
               </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-500'>Total Stars</p>
-                <p className='text-2xl font-semibold text-gray-900'>
+              <div className='sm:ml-4'>
+                <p className='text-xs sm:text-sm font-medium text-gray-500'>
+                  <span className='hidden sm:inline'>Total Stars</span>
+                  <span className='sm:hidden'>Stars</span>
+                </p>
+                <p className='text-lg sm:text-2xl font-semibold text-gray-900'>
                   {overviewData.totals.stars_total.toLocaleString()}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className='bg-white p-6 rounded-lg shadow'>
-            <div className='flex items-center'>
-              <div className='flex-shrink-0'>
+          <div className='bg-white p-4 sm:p-6 rounded-lg shadow'>
+            <div className='flex flex-col sm:flex-row sm:items-center'>
+              <div className='flex-shrink-0 mb-2 sm:mb-0'>
                 <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
                   <span className='text-blue-600 text-lg'>👀</span>
                 </div>
               </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-500'>
-                  14-day Views
+              <div className='sm:ml-4'>
+                <p className='text-xs sm:text-sm font-medium text-gray-500'>
+                  <span className='hidden sm:inline'>14-day Views</span>
+                  <span className='sm:hidden'>Views</span>
                 </p>
-                <p className='text-2xl font-semibold text-gray-900'>
+                <p className='text-lg sm:text-2xl font-semibold text-gray-900'>
                   {overviewData.totals.views_14d.toLocaleString()}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className='bg-white p-6 rounded-lg shadow'>
-            <div className='flex items-center'>
-              <div className='flex-shrink-0'>
+          <div className='bg-white p-4 sm:p-6 rounded-lg shadow'>
+            <div className='flex flex-col sm:flex-row sm:items-center'>
+              <div className='flex-shrink-0 mb-2 sm:mb-0'>
                 <div className='w-8 h-8 bg-green-100 rounded-full flex items-center justify-center'>
                   <span className='text-green-600 text-lg'>👥</span>
                 </div>
               </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-500'>
-                  Unique Visitors
+              <div className='sm:ml-4'>
+                <p className='text-xs sm:text-sm font-medium text-gray-500'>
+                  <span className='hidden sm:inline'>Unique Visitors</span>
+                  <span className='sm:hidden'>Visitors</span>
                 </p>
-                <p className='text-2xl font-semibold text-gray-900'>
+                <p className='text-lg sm:text-2xl font-semibold text-gray-900'>
                   {overviewData.totals.unique_14d.toLocaleString()}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className='bg-white p-6 rounded-lg shadow'>
-            <div className='flex items-center'>
-              <div className='flex-shrink-0'>
+          <div className='bg-white p-4 sm:p-6 rounded-lg shadow'>
+            <div className='flex flex-col sm:flex-row sm:items-center'>
+              <div className='flex-shrink-0 mb-2 sm:mb-0'>
                 <div className='w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center'>
                   <span className='text-purple-600 text-lg'>📁</span>
                 </div>
               </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-500'>
-                  Repositories
+              <div className='sm:ml-4'>
+                <p className='text-xs sm:text-sm font-medium text-gray-500'>
+                  <span className='hidden sm:inline'>Repositories</span>
+                  <span className='sm:hidden'>Repos</span>
                 </p>
-                <p className='text-2xl font-semibold text-gray-900'>
+                <p className='text-lg sm:text-2xl font-semibold text-gray-900'>
                   {overviewData.totals.repos_count}
                 </p>
               </div>

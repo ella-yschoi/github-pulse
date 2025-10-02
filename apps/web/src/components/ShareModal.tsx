@@ -96,7 +96,7 @@ export default function ShareModal({
 
   return (
     <div className='fixed inset-0 z-50 overflow-y-auto'>
-      <div className='flex min-h-screen items-center justify-center p-4'>
+      <div className='flex min-h-screen items-center justify-center p-2 sm:p-4'>
         {/* Background overlay */}
         <div
           className='fixed inset-0 bg-black/40 bg-opacity-50 transition-opacity'
@@ -104,54 +104,58 @@ export default function ShareModal({
         />
 
         {/* Modal content */}
-        <div className='relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
+        <div className='relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[95vh] overflow-y-auto'>
           {/* Header */}
-          <div className='flex items-center justify-between p-6 border-b'>
-            <h2 className='text-xl font-semibold text-gray-900'>Share</h2>
+          <div className='flex items-center justify-between p-4 sm:p-6 border-b'>
+            <h2 className='text-lg sm:text-xl font-semibold text-gray-900'>
+              Share
+            </h2>
             <button
               onClick={onClose}
-              className='text-gray-400 hover:text-gray-600 transition-colors'
+              className='text-gray-400 hover:text-gray-600 transition-colors p-1'
             >
-              <X className='w-6 h-6 cursor-pointer' />
+              <X className='w-5 h-5 sm:w-6 sm:h-6 cursor-pointer' />
             </button>
           </div>
 
           {/* Content */}
-          <div className='p-6 space-y-6'>
+          <div className='p-4 sm:p-6 space-y-4 sm:space-y-6'>
             {/* OG image preview */}
             <div>
-              <div className='flex items-center justify-between mb-4'>
-                <h3 className='text-lg font-medium text-gray-900'>Preview</h3>
+              <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0'>
+                <h3 className='text-base sm:text-lg font-medium text-gray-900'>
+                  Preview
+                </h3>
                 <button
                   onClick={copyImage}
-                  className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                  className={`cursor-pointer px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                     imageCopied
                       ? 'bg-blue-100 text-blue-800 border border-blue-200'
                       : 'bg-emerald-500 text-white hover:bg-emerald-600'
                   }`}
                 >
                   {imageCopied ? (
-                    <Check className='w-4 h-4' />
+                    <Check className='w-3 h-3 sm:w-4 sm:h-4' />
                   ) : (
-                    <Copy className='w-4 h-4' />
+                    <Copy className='w-3 h-3 sm:w-4 sm:h-4' />
                   )}
                   {imageCopied ? 'Copied!' : 'Copy Image'}
                 </button>
               </div>
               <div className='flex flex-col items-center'>
-                <div className='relative'>
+                <div className='relative w-full max-w-md'>
                   <Image
                     src={ogImageURL}
                     alt='GitHub Pulse OG Image'
                     width={600}
                     height={315}
-                    className='rounded-lg shadow-lg'
+                    className='rounded-lg shadow-lg w-full h-auto'
                   />
                   <div className='absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded'>
                     OG Image
                   </div>
                 </div>
-                <p className='text-sm text-gray-500 mt-2 text-center'>
+                <p className='text-xs sm:text-sm text-gray-500 mt-2 text-center'>
                   This is how the image will appear
                 </p>
               </div>
@@ -159,33 +163,33 @@ export default function ShareModal({
 
             {/* Share link */}
             <div>
-              <h3 className='text-lg font-medium text-gray-900 mb-4'>
+              <h3 className='text-base sm:text-lg font-medium text-gray-900 mb-4'>
                 Share Link
               </h3>
-              <div className='flex gap-2'>
+              <div className='flex flex-col sm:flex-row gap-2'>
                 <input
                   type='text'
                   value={shareURL}
                   readOnly
-                  className='flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50 text-gray-500'
+                  className='flex-1 px-3 py-2 border border-gray-300 rounded-md text-xs sm:text-sm bg-gray-50 text-gray-500 break-all'
                 />
                 <button
                   onClick={copyShareLink}
-                  className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                  className={`cursor-pointer px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                     linkCopied
                       ? 'bg-blue-100 text-blue-800 border border-blue-200'
                       : 'bg-emerald-500 text-white hover:bg-emerald-600'
                   }`}
                 >
                   {linkCopied ? (
-                    <Check className='w-4 h-4' />
+                    <Check className='w-3 h-3 sm:w-4 sm:h-4' />
                   ) : (
-                    <Copy className='w-4 h-4' />
+                    <Copy className='w-3 h-3 sm:w-4 sm:h-4' />
                   )}
                   {linkCopied ? 'Copied!' : 'Copy Link'}
                 </button>
               </div>
-              <p className='text-sm text-gray-500 mt-2'>
+              <p className='text-xs sm:text-sm text-gray-500 mt-2'>
                 Copy this link to share your dashboard
               </p>
             </div>

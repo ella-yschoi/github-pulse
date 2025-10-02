@@ -105,36 +105,39 @@ export default function ReportModal({
   };
 
   return (
-    <div className='fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
+    <div className='fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4'>
+      <div className='bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto'>
         <div className='flex justify-between items-center mb-4'>
-          <h2 className='text-xl font-bold text-gray-900'>
-            Generate Weekly Report
+          <h2 className='text-lg sm:text-xl font-bold text-gray-900'>
+            <span className='hidden sm:inline'>Generate Weekly Report</span>
+            <span className='sm:hidden'>Weekly Report</span>
           </h2>
           <button
             onClick={onClose}
-            className='text-gray-400 hover:text-gray-600'
+            className='text-gray-400 hover:text-gray-600 p-1'
           >
-            <X className='h-6 w-6' />
+            <X className='h-5 w-5 sm:h-6 sm:w-6' />
           </button>
         </div>
 
-        <div className='space-y-4'>
+        <div className='space-y-3 sm:space-y-4'>
           {/* Generate Button */}
           <button
             onClick={handleGenerateReport}
             disabled={isGenerating}
-            className='w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center'
+            className='w-full bg-emerald-600 text-white py-3 sm:py-2 px-4 rounded-md hover:bg-emerald-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center text-sm sm:text-base'
           >
             {isGenerating ? (
               <>
                 <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
-                Generating...
+                <span className='hidden sm:inline'>Generating...</span>
+                <span className='sm:hidden'>Generating</span>
               </>
             ) : (
               <>
                 <FileText className='h-4 w-4 mr-2' />
-                Generate Report
+                <span className='hidden sm:inline'>Generate Report</span>
+                <span className='sm:hidden'>Generate</span>
               </>
             )}
           </button>
@@ -144,17 +147,19 @@ export default function ReportModal({
             <button
               onClick={handleDownloadReport}
               disabled={isDownloading}
-              className='w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer'
+              className='w-full bg-gray-600 text-white py-3 sm:py-2 px-4 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer text-sm sm:text-base'
             >
               {isDownloading ? (
                 <>
                   <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
-                  Downloading...
+                  <span className='hidden sm:inline'>Downloading...</span>
+                  <span className='sm:hidden'>Downloading</span>
                 </>
               ) : (
                 <>
                   <Download className='h-4 w-4 mr-2' />
-                  Download PDF
+                  <span className='hidden sm:inline'>Download PDF</span>
+                  <span className='sm:hidden'>Download</span>
                 </>
               )}
             </button>
@@ -163,7 +168,7 @@ export default function ReportModal({
           {/* Report Info */}
           {generatedReport && (
             <div className='bg-green-50 border border-green-200 rounded-md p-3'>
-              <p className='text-sm text-green-800'>
+              <p className='text-xs sm:text-sm text-green-800'>
                 ✅ Report generated successfully!
               </p>
             </div>

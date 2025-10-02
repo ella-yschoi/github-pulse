@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useState, useEffect } from 'react';
 
 interface ViewsData {
   date: string;
@@ -22,12 +23,24 @@ interface ViewsChartProps {
 }
 
 export function ViewsChart({ data, loading = false }: ViewsChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   if (loading) {
     return (
-      <div className='bg-white p-6 rounded-lg shadow-sm border'>
+      <div className='bg-white p-4 sm:p-6 rounded-lg shadow-sm border'>
         <div className='animate-pulse'>
           <div className='h-4 bg-gray-200 rounded w-1/4 mb-4'></div>
-          <div className='h-64 bg-gray-200 rounded'></div>
+          <div className='h-48 sm:h-64 bg-gray-200 rounded'></div>
         </div>
       </div>
     );
@@ -35,11 +48,12 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
 
   if (!data || data.length === 0) {
     return (
-      <div className='bg-white p-6 rounded-lg shadow-sm border'>
-        <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-          14-day Views Trend
+      <div className='bg-white p-4 sm:p-6 rounded-lg shadow-sm border'>
+        <h3 className='text-base sm:text-lg font-semibold text-gray-900 mb-4'>
+          <span className='hidden sm:inline'>14-day Views Trend</span>
+          <span className='sm:hidden'>Views Trend</span>
         </h3>
-        <div className='h-64 flex items-center justify-center text-gray-500'>
+        <div className='h-48 sm:h-64 flex items-center justify-center text-gray-500'>
           <div className='text-center'>
             <svg
               className='mx-auto h-12 w-12 text-gray-400'
@@ -70,43 +84,52 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
   }));
 
   return (
-    <div className='bg-white p-6 rounded-lg shadow-sm border'>
-      <div className='flex items-center justify-between mb-4'>
-        <h3 className='text-lg font-semibold text-gray-900'>
-          14-day Views Trend
+    <div className='bg-white p-4 sm:p-6 rounded-lg shadow-sm border'>
+      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0'>
+        <h3 className='text-base sm:text-lg font-semibold text-gray-900'>
+          <span className='hidden sm:inline'>14-day Views Trend</span>
+          <span className='sm:hidden'>Views Trend</span>
         </h3>
-        <div className='flex items-center space-x-4 text-sm text-gray-600'>
+        <div className='flex items-center justify-center sm:justify-end space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-600'>
           <div className='flex items-center'>
-            <div className='w-3 h-3 bg-blue-500 rounded-full mr-2'></div>
+            <div className='w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full mr-1 sm:mr-2'></div>
             <span>Views</span>
           </div>
           <div className='flex items-center'>
-            <div className='w-3 h-3 bg-green-500 rounded-full mr-2'></div>
-            <span>Unique Visitors</span>
+            <div className='w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full mr-1 sm:mr-2'></div>
+            <span className='hidden sm:inline'>Unique Visitors</span>
+            <span className='sm:hidden'>Visitors</span>
           </div>
         </div>
       </div>
 
-      <div className='h-64'>
+      <div className='h-48 sm:h-64'>
         <ResponsiveContainer width='100%' height='100%'>
           <LineChart
             data={formattedData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            margin={{
+              top: 5,
+              right: isMobile ? 10 : 30,
+              left: isMobile ? 10 : 20,
+              bottom: 5,
+            }}
           >
             <CartesianGrid strokeDasharray='3 3' stroke='#f0f0f0' />
             <XAxis
               dataKey='date'
               stroke='#666'
-              fontSize={12}
+              fontSize={isMobile ? 10 : 12}
               tickLine={false}
               axisLine={false}
+              interval={isMobile ? 'preserveStartEnd' : 0}
             />
             <YAxis
               stroke='#666'
-              fontSize={12}
+              fontSize={isMobile ? 10 : 12}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => value.toLocaleString()}
+              width={isMobile ? 30 : 40}
             />
             <Tooltip
               contentStyle={{
@@ -114,8 +137,13 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
                 border: '1px solid #e5e7eb',
                 borderRadius: '8px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                fontSize: isMobile ? '12px' : '14px',
               }}
-              labelStyle={{ color: '#374151', fontWeight: '500' }}
+              labelStyle={{
+                color: '#374151',
+                fontWeight: '500',
+                fontSize: isMobile ? '12px' : '14px',
+              }}
               formatter={(value: number, name: string) => [
                 value.toLocaleString(),
                 name === 'views' ? 'Views' : 'Unique Visitors',
@@ -126,17 +154,33 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
               type='monotone'
               dataKey='views'
               stroke='#3b82f6'
-              strokeWidth={2}
-              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
+              strokeWidth={isMobile ? 1.5 : 2}
+              dot={{
+                fill: '#3b82f6',
+                strokeWidth: isMobile ? 1 : 2,
+                r: isMobile ? 3 : 4,
+              }}
+              activeDot={{
+                r: isMobile ? 4 : 6,
+                stroke: '#3b82f6',
+                strokeWidth: isMobile ? 1 : 2,
+              }}
             />
             <Line
               type='monotone'
               dataKey='unique'
               stroke='#10b981'
-              strokeWidth={2}
-              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+              strokeWidth={isMobile ? 1.5 : 2}
+              dot={{
+                fill: '#10b981',
+                strokeWidth: isMobile ? 1 : 2,
+                r: isMobile ? 3 : 4,
+              }}
+              activeDot={{
+                r: isMobile ? 4 : 6,
+                stroke: '#10b981',
+                strokeWidth: isMobile ? 1 : 2,
+              }}
             />
           </LineChart>
         </ResponsiveContainer>
