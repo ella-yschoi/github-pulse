@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { X, Copy, Check } from 'lucide-react';
+import { X, Copy, Check, Loader2 } from 'lucide-react';
+import { shortenUrl } from '@/lib/shorten';
 
 interface TimeseriesPoint {
   date: string;
@@ -31,6 +32,9 @@ export default function ShareModal({
 }: ShareModalProps) {
   const [linkCopied, setLinkCopied] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string>('');
+  const [isGeneratingShortUrl, setIsGeneratingShortUrl] = useState(false);
+  const [shortUrlError, setShortUrlError] = useState<string>('');
 
   if (!isOpen) return null;
 
@@ -63,10 +67,35 @@ export default function ShareModal({
     return `${window.location.origin}/shared?${params.toString()}`;
   };
 
+  // Generate short URL
+  const generateShortUrl = async () => {
+    if (shortUrl) return; // Short URL already generated
+
+    setIsGeneratingShortUrl(true);
+    setShortUrlError('');
+
+    try {
+      const originalUrl = generateShareURL();
+      const result = await shortenUrl(originalUrl);
+
+      if ('error' in result) {
+        setShortUrlError(result.error);
+      } else {
+        setShortUrl(result.shortUrl);
+      }
+    } catch (err) {
+      console.error('Failed to generate short URL:', err);
+      setShortUrlError('Failed to generate short URL');
+    } finally {
+      setIsGeneratingShortUrl(false);
+    }
+  };
+
   // Copy link
   const copyShareLink = async () => {
     try {
-      await navigator.clipboard.writeText(generateShareURL());
+      const urlToCopy = shortUrl || generateShareURL();
+      await navigator.clipboard.writeText(urlToCopy);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
@@ -93,6 +122,11 @@ export default function ShareModal({
 
   const ogImageURL = generateOGImageURL();
   const shareURL = generateShareURL();
+
+  // Generate short URL automatically when modal is opened
+  if (isOpen && !shortUrl && !isGeneratingShortUrl && !shortUrlError) {
+    generateShortUrl();
+  }
 
   return (
     <div className='fixed inset-0 z-50 overflow-y-auto'>
@@ -166,29 +200,46 @@ export default function ShareModal({
               <h3 className='text-base sm:text-lg font-medium text-gray-900 mb-4'>
                 Share Link
               </h3>
+
               <div className='flex flex-col sm:flex-row gap-2'>
                 <input
                   type='text'
-                  value={shareURL}
+                  value={shortUrl || shareURL}
                   readOnly
                   className='flex-1 px-3 py-2 border border-gray-300 rounded-md text-xs sm:text-sm bg-gray-50 text-gray-500 break-all'
                 />
                 <button
                   onClick={copyShareLink}
+                  disabled={isGeneratingShortUrl}
                   className={`cursor-pointer px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                     linkCopied
                       ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      : isGeneratingShortUrl
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-emerald-500 text-white hover:bg-emerald-600'
                   }`}
                 >
                   {linkCopied ? (
                     <Check className='w-3 h-3 sm:w-4 sm:h-4' />
+                  ) : isGeneratingShortUrl ? (
+                    <Loader2 className='w-3 h-3 sm:w-4 sm:h-4 animate-spin' />
                   ) : (
                     <Copy className='w-3 h-3 sm:w-4 sm:h-4' />
                   )}
-                  {linkCopied ? 'Copied!' : 'Copy Link'}
+                  {linkCopied
+                    ? 'Copied!'
+                    : isGeneratingShortUrl
+                    ? 'Preparing...'
+                    : 'Copy Link'}
                 </button>
               </div>
+
+              {shortUrlError && (
+                <p className='text-xs sm:text-sm text-red-500 mt-2'>
+                  {shortUrlError}
+                </p>
+              )}
+
               <p className='text-xs sm:text-sm text-gray-500 mt-2'>
                 Copy this link to share your dashboard
               </p>
