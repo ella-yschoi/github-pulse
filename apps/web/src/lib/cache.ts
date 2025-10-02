@@ -1,6 +1,6 @@
 /**
- * 간단한 메모리 캐시 구현
- * 프로덕션에서는 Redis나 다른 캐시 솔루션 사용 예정
+ * Simple memory cache implementation
+ * Redis or other cache solutions will be used in production
  */
 
 interface CacheItem<T> {
@@ -13,7 +13,7 @@ class MemoryCache {
   private cache = new Map<string, CacheItem<unknown>>();
 
   /**
-   * 캐시에서 데이터 조회
+   * Retrieve data from cache
    */
   get<T>(key: string): T | null {
     const item = this.cache.get(key);
@@ -22,7 +22,7 @@ class MemoryCache {
       return null;
     }
 
-    // TTL 체크
+    // TTL check
     if (Date.now() - item.timestamp > item.ttl) {
       this.cache.delete(key);
       return null;
@@ -32,7 +32,7 @@ class MemoryCache {
   }
 
   /**
-   * 캐시에 데이터 저장
+   * Store data in cache
    */
   set<T>(key: string, data: T, ttlMs: number = 300000): void {
     this.cache.set(key, {
@@ -43,21 +43,21 @@ class MemoryCache {
   }
 
   /**
-   * 캐시에서 데이터 삭제
+   * Delete data from cache
    */
   delete(key: string): boolean {
     return this.cache.delete(key);
   }
 
   /**
-   * 캐시 클리어
+   * Clear cache
    */
   clear(): void {
     this.cache.clear();
   }
 
   /**
-   * 만료된 캐시 항목들 정리
+   * Clean up expired cache items
    */
   cleanup(): void {
     const now = Date.now();
@@ -69,18 +69,18 @@ class MemoryCache {
   }
 
   /**
-   * 캐시 크기 반환
+   * Return cache size
    */
   size(): number {
     return this.cache.size;
   }
 }
 
-// 전역 캐시 인스턴스
+// Global cache instance
 export const cache = new MemoryCache();
 
 /**
- * 캐시 키 생성 헬퍼
+ * Cache key generation helper
  */
 export function createCacheKey(
   prefix: string,
@@ -90,7 +90,7 @@ export function createCacheKey(
 }
 
 /**
- * GitHub API 응답 캐시 키 생성
+ * Generate GitHub API response cache key
  */
 export function createGitHubCacheKey(
   userId: string,
@@ -102,12 +102,12 @@ export function createGitHubCacheKey(
 }
 
 /**
- * 캐시 TTL 상수 (밀리초)
+ * Cache TTL constants (in milliseconds)
  */
 export const CACHE_TTL = {
-  SHORT: 60000, // 1분
-  MEDIUM: 300000, // 5분
-  LONG: 1800000, // 30분
-  VERY_LONG: 3600000, // 1시간
-  ULTRA_LONG: 7200000, // 2시간
+  SHORT: 60000, // 1 minute
+  MEDIUM: 300000, // 5 minutes
+  LONG: 1800000, // 30 minutes
+  VERY_LONG: 3600000, // 1 hour
+  ULTRA_LONG: 7200000, // 2 hours
 } as const;

@@ -25,7 +25,7 @@ export class GitHubService {
         },
       });
 
-      // 해당 사용자가 소유한 리포지토리만 필터링 (fork 제외)
+      // Filter only repositories owned by the user (exclude forks)
       const userRepos = response.data.filter(
         (repo: GitHubRepo) => repo.owner.login === username && !repo.fork
       );
@@ -98,7 +98,7 @@ export class GitHubService {
         clone_uniques: clones.uniques,
       };
     } catch (error: any) {
-      // 403 Forbidden이나 404 Not Found는 권한이 없거나 접근할 수 없는 리포지토리
+      // 403 Forbidden or 404 Not Found means no permission or inaccessible repository
       if (error.response?.status === 403 || error.response?.status === 404) {
         console.log(`Skipping ${owner}/${repo} - no access or not found`);
         return {

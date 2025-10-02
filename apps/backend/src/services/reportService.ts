@@ -44,7 +44,7 @@ export class ReportService {
           });
         } catch (error: any) {
           console.log(`Skipping repo ${repo.full_name} due to error:`, error);
-          // 계속 진행
+          // Continue processing
         }
       }
 

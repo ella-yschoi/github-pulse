@@ -17,7 +17,7 @@ interface ShareModalProps {
     stars: number;
     views: number;
     topRepo: string;
-    timeseries: TimeseriesPoint[]; // 14일 데이터
+    timeseries: TimeseriesPoint[]; // 14-day data
     brandCopy: string;
     reposCount: number;
     top5: { full_name: string; stars: number; views_14d: number }[];
@@ -34,7 +34,7 @@ export default function ShareModal({
 
   if (!isOpen) return null;
 
-  // OG 이미지 URL 생성
+  // Generate OG image URL
   const generateOGImageURL = () => {
     const params = new URLSearchParams({
       username: shareData.username,
@@ -45,9 +45,9 @@ export default function ShareModal({
     return `/opengraph-image?${params.toString()}`;
   };
 
-  // 공유 링크 생성 (최소 파라미터만 유지)
+  // Generate share link (keep minimal parameters only)
   const generateShareURL = () => {
-    // 공유는 상위 3개만: full_name|stars|views;...
+    // Share only top 3: full_name|stars|views;...
     const top3Str = (shareData.top5 || [])
       .slice(0, 3)
       .map((r) => `${r.full_name}|${r.stars}|${r.views_14d}`)
@@ -57,13 +57,13 @@ export default function ShareModal({
       s: String(shareData.stars), // stars
       v: String(shareData.views), // 14d views
       t: shareData.topRepo, // top repo
-      r: String(shareData.reposCount), // repos count (짧은 키)
+      r: String(shareData.reposCount), // repos count (short key)
       top3: top3Str, // top3 compressed
     });
     return `${window.location.origin}/shared?${params.toString()}`;
   };
 
-  // 링크 복사
+  // Copy link
   const copyShareLink = async () => {
     try {
       await navigator.clipboard.writeText(generateShareURL());
@@ -74,7 +74,7 @@ export default function ShareModal({
     }
   };
 
-  // 이미지 복사
+  // Copy image
   const copyImage = async () => {
     try {
       const response = await fetch(generateOGImageURL());
@@ -97,15 +97,15 @@ export default function ShareModal({
   return (
     <div className='fixed inset-0 z-50 overflow-y-auto'>
       <div className='flex min-h-screen items-center justify-center p-4'>
-        {/* 배경 오버레이 */}
+        {/* Background overlay */}
         <div
           className='fixed inset-0 bg-black/40 bg-opacity-50 transition-opacity'
           onClick={onClose}
         />
 
-        {/* 모달 컨텐츠 */}
+        {/* Modal content */}
         <div className='relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
-          {/* 헤더 */}
+          {/* Header */}
           <div className='flex items-center justify-between p-6 border-b'>
             <h2 className='text-xl font-semibold text-gray-900'>Share</h2>
             <button
@@ -116,9 +116,9 @@ export default function ShareModal({
             </button>
           </div>
 
-          {/* 컨텐츠 */}
+          {/* Content */}
           <div className='p-6 space-y-6'>
-            {/* OG 이미지 미리보기 */}
+            {/* OG image preview */}
             <div>
               <div className='flex items-center justify-between mb-4'>
                 <h3 className='text-lg font-medium text-gray-900'>Preview</h3>
@@ -157,7 +157,7 @@ export default function ShareModal({
               </div>
             </div>
 
-            {/* 공유 링크 */}
+            {/* Share link */}
             <div>
               <h3 className='text-lg font-medium text-gray-900 mb-4'>
                 Share Link

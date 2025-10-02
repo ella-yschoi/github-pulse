@@ -9,7 +9,7 @@ function SharedContent() {
   const [copied, setCopied] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('');
 
-  // URL 파라미터에서 데이터 추출
+  // Extract data from URL parameters
   const username =
     searchParams.get('u') || searchParams.get('username') || 'GitHub User';
   const stars = parseInt(
@@ -37,14 +37,14 @@ function SharedContent() {
       };
     });
 
-  // 클라이언트 사이드에서 URL 설정
+  // Set URL on client side
   useEffect(() => {
     setCurrentUrl(window.location.href);
   }, []);
 
-  // (이전) ts 기반 차트는 제거
+  // (Previous) ts-based chart removed
 
-  // 링크 복사 함수
+  // Copy link function
   const copyShareLink = async () => {
     try {
       await navigator.clipboard.writeText(currentUrl);
@@ -73,7 +73,7 @@ function SharedContent() {
             </h1>
           </div>
           <p className='text-xl text-gray-600 mb-2'>
-            @{username}의 GitHub Activity Dashboard
+            @{username}&apos;s GitHub Activity Dashboard
           </p>
         </div>
 

@@ -104,7 +104,7 @@ export class ReportController {
         username as string,
         start_date as string
       );
-      // 우선 메모리 버퍼 기반 스트리밍 시도 (서버리스/제한된 파일시스템 환경 대응)
+      // Try memory buffer-based streaming first (for serverless/limited filesystem environments)
       try {
         pdfBuffer = await this.pdfService.generateWeeklyReportPDFBuffer(report);
       } catch (bufferErr: any) {
@@ -147,7 +147,7 @@ export class ReportController {
         });
       }
 
-      // 모든 방식 실패 시 JSON 응답
+      // JSON response when all methods fail
       return res.status(502).json({
         success: false,
         message: 'PDF generation failed, but report data is available',

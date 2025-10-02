@@ -31,7 +31,7 @@ export function SparklineChart({
     );
   }
 
-  // 데이터 포맷팅 (날짜를 MM/DD 형식으로)
+  // Format data (date in MM/DD format)
   const formattedData = data.map((item) => ({
     ...item,
     date: new Date(item.date).toLocaleDateString('ko-KR', {

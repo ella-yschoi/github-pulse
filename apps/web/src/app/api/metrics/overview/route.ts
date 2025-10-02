@@ -5,7 +5,7 @@ import { gh, isRateLimitError, isGitHubAPIError } from '@/lib/github';
 import { cache, createGitHubCacheKey, CACHE_TTL } from '@/lib/cache';
 import { makeBrandCopy } from '@/lib/brandCopy';
 
-// 타입 정의
+// Type definitions
 interface GitHubRepo {
   id: number;
   name: string;
@@ -49,11 +49,11 @@ interface OverviewResponse {
 
 export async function GET() {
   try {
-    // 세션 확인
+    // Check session
     const session = await getServerSession(authOptions);
     if (!session?.accessToken) {
       return NextResponse.json(
-        { error: '인증이 필요합니다.' },
+        { error: 'Authentication required.' },
         { status: 401 }
       );
     }
@@ -61,11 +61,11 @@ export async function GET() {
     const accessToken = session.accessToken as string;
     const userId = session.user?.email || 'unknown';
 
-    // 캐시 확인 (더 긴 TTL 사용)
+    // Check cache (use longer TTL)
     const cacheKey = createGitHubCacheKey(userId, 'overview');
     const cachedData = cache.get<OverviewResponse>(cacheKey);
     if (cachedData) {
-      console.log('캐시에서 데이터 반환:', cacheKey);
+      console.log('Returning data from cache:', cacheKey);
       return NextResponse.json(cachedData, {
         headers: {
           'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
@@ -74,14 +74,12 @@ export async function GET() {
       });
     }
 
-    // 1. 사용자 리포지토리 목록 조회
-    console.log('사용자 리포지토리 목록 조회 시작...');
+    // 1. Get user repository list
+    console.log('Starting user repository list query...');
 
-    // 임시: GitHub Personal Access Token이 없을 때 모킹 데이터 사용
+    // Temporary: Use mock data when GitHub Personal Access Token is not available
     if (!accessToken || accessToken === 'undefined') {
-      console.warn(
-        'GitHub Personal Access Token이 설정되지 않음. 모킹 데이터 사용'
-      );
+      console.warn('GitHub Personal Access Token is not set. Using mock data');
       const mockData: OverviewResponse = {
         range: '14d',
         totals: {
@@ -92,7 +90,7 @@ export async function GET() {
         },
         timeseries: [],
         top_repos: [],
-        brand_copy: 'GitHub Personal Access Token을 설정해주세요',
+        brand_copy: 'Please set up GitHub Personal Access Token',
       };
 
       return NextResponse.json(mockData, {
@@ -108,26 +106,26 @@ export async function GET() {
       '/user/repos?per_page=100&type=owner&sort=updated'
     );
     console.log(
-      `총 ${Array.isArray(repos) ? repos.length : 0}개 리포지토리 발견`
+      `Found ${Array.isArray(repos) ? repos.length : 0} repositories in total`
     );
 
     if (!Array.isArray(repos)) {
-      throw new Error('리포지토리 데이터를 가져올 수 없습니다.');
+      throw new Error('Unable to fetch repository data.');
     }
 
-    // 2. 상위 리포지토리 선별 (stars 기준 TOP 10)
+    // 2. Select top repositories (TOP 10 by stars)
     const topRepos = repos
-      .filter((repo: GitHubRepo) => repo.permissions.push) // push 권한이 있는 리포만
+      .filter((repo: GitHubRepo) => repo.permissions.push) // Only repos with push permission
       .sort(
         (a: GitHubRepo, b: GitHubRepo) =>
           b.stargazers_count - a.stargazers_count
       )
       .slice(0, 10);
 
-    // 3. Traffic 데이터 병렬 조회 (최대 5개로 제한하여 API 호출 최적화)
+    // 3. Parallel traffic data query (limit to max 5 for API call optimization)
     const limitedTopRepos = topRepos.slice(0, 5);
     console.log(
-      `Traffic 데이터 조회 시작: ${limitedTopRepos.length}개 리포지토리`
+      `Starting traffic data query: ${limitedTopRepos.length} repositories`
     );
 
     const trafficPromises = limitedTopRepos.map(async (repo: GitHubRepo) => {
@@ -141,13 +139,13 @@ export async function GET() {
           traffic: traffic as TrafficViews,
         };
       } catch (error) {
-        // Traffic API 접근 불가 시 빈 데이터 반환
+        // Return empty data when Traffic API is not accessible
         if (
           isGitHubAPIError(error) &&
           (error.status === 403 || error.status === 404)
         ) {
           console.warn(
-            `Traffic API 접근 불가: ${repo.full_name} (${error.status})`
+            `Traffic API not accessible: ${repo.full_name} (${error.status})`
           );
           return {
             repo,
@@ -158,12 +156,12 @@ export async function GET() {
             } as TrafficViews,
           };
         }
-        // 레이트리밋 에러는 상위로 전파
+        // Propagate rate limit errors to upper level
         if (isRateLimitError(error)) {
           throw error;
         }
-        // 기타 에러는 빈 데이터로 처리
-        console.warn(`Traffic API 에러: ${repo.full_name}`, error);
+        // Handle other errors with empty data
+        console.warn(`Traffic API error: ${repo.full_name}`, error);
         return {
           repo,
           traffic: {
@@ -175,36 +173,35 @@ export async function GET() {
       }
     });
 
-    // API 호출을 배치로 나누어 처리 (한 번에 2개씩)
+    // Process API calls in batches (2 at a time)
     const trafficResults = [];
     const batchSize = 2;
 
     console.log(
-      `배치 처리 시작: ${trafficPromises.length}개 요청을 ${batchSize}개씩 처리`
+      `Starting batch processing: ${trafficPromises.length} requests in batches of ${batchSize}`
     );
 
     for (let i = 0; i < trafficPromises.length; i += batchSize) {
       const batch = trafficPromises.slice(i, i + batchSize);
       console.log(
-        `배치 ${Math.floor(i / batchSize) + 1} 처리 중... (${i + 1}-${Math.min(
-          i + batchSize,
-          trafficPromises.length
-        )})`
+        `Processing batch ${Math.floor(i / batchSize) + 1}... (${
+          i + 1
+        }-${Math.min(i + batchSize, trafficPromises.length)})`
       );
 
       const batchResults = await Promise.allSettled(batch);
       trafficResults.push(...batchResults);
 
-      // 배치 간 지연 시간 (API 호출 부하 감소)
+      // Delay between batches (reduce API call load)
       if (i + batchSize < trafficPromises.length) {
-        console.log('배치 간 100ms 지연...');
+        console.log('100ms delay between batches...');
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
     }
 
-    console.log('Traffic 데이터 조회 완료');
+    console.log('Traffic data query completed');
 
-    // 4. 데이터 집계
+    // 4. Data aggregation
     let totalStars = 0;
     let totalViews14d = 0;
     let totalUnique14d = 0;
@@ -216,17 +213,17 @@ export async function GET() {
       sparkline_data: { date: string; views: number }[];
     }[] = [];
 
-    // 모든 리포지토리의 stars 합계
+    // Sum of stars from all repositories
     repos.forEach((repo: GitHubRepo) => {
       totalStars += repo.stargazers_count;
     });
 
-    // Traffic 데이터가 있는 리포지토리들 처리
+    // Process repositories with traffic data
     trafficResults.forEach((result) => {
       if (result.status === 'fulfilled') {
         const { repo, traffic } = result.value;
 
-        // 14일간 views 합계
+        // Sum of views over 14 days
         const views14d = traffic.views.reduce(
           (sum, view) => sum + view.count,
           0
@@ -239,13 +236,13 @@ export async function GET() {
         totalViews14d += views14d;
         totalUnique14d += unique14d;
 
-        // 스파크라인 데이터 생성 (14일간 views 데이터)
+        // Generate sparkline data (14-day views data)
         const sparklineData = traffic.views.map((view) => ({
           date: new Date(view.timestamp).toISOString().split('T')[0],
           views: view.count,
         }));
 
-        // 14일 데이터 보장 (부족한 날짜는 0으로 채움)
+        // Ensure 14-day data (fill missing dates with 0)
         const last14DaysSparkline = [];
         const today = new Date();
 
@@ -263,7 +260,7 @@ export async function GET() {
           });
         }
 
-        // 상위 리포지토리 목록에 추가
+        // Add to top repositories list
         topReposWithTraffic.push({
           full_name: repo.full_name,
           stars: repo.stargazers_count,
@@ -271,7 +268,7 @@ export async function GET() {
           sparkline_data: last14DaysSparkline,
         });
 
-        // Timeseries 데이터 병합
+        // Merge timeseries data
         traffic.views.forEach((view) => {
           const date = new Date(view.timestamp).toISOString().split('T')[0];
           const existing = timeseriesMap.get(date) || { views: 0, unique: 0 };
@@ -283,7 +280,7 @@ export async function GET() {
       }
     });
 
-    // 5. Timeseries 데이터 정렬 및 포맷팅
+    // 5. Sort and format timeseries data
     const timeseries = Array.from(timeseriesMap.entries())
       .map(([date, data]) => ({
         date,
@@ -292,7 +289,7 @@ export async function GET() {
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // 6. 14일 데이터 보장 (부족한 날짜는 0으로 채움)
+    // 6. Ensure 14-day data (fill missing dates with 0)
     const last14Days = [];
     const today = new Date();
 
@@ -309,18 +306,18 @@ export async function GET() {
       });
     }
 
-    // 7. 상위 리포지토리 정렬 (views 기준)
+    // 7. Sort top repositories (by views)
     topReposWithTraffic.sort((a, b) => b.views_14d - a.views_14d);
 
-    // 8. 브랜딩 문구 생성
-    const topRepoName = topReposWithTraffic[0]?.full_name || '리포지토리 없음';
+    // 8. Generate branding copy
+    const topRepoName = topReposWithTraffic[0]?.full_name || 'No repositories';
     const brandCopy = makeBrandCopy({
       starsTotal: totalStars,
       views14d: totalViews14d,
       topRepoName,
     });
 
-    // 8. 응답 데이터 구성
+    // 8. Compose response data
     const responseData: OverviewResponse = {
       range: '14d',
       totals: {
@@ -330,13 +327,13 @@ export async function GET() {
         repos_count: repos.length,
       },
       timeseries: last14Days,
-      top_repos: topReposWithTraffic.slice(0, 5), // 상위 5개만
+      top_repos: topReposWithTraffic.slice(0, 5), // Top 5 only
       brand_copy: brandCopy,
     };
 
-    // 9. 캐시 저장 (더 긴 TTL 사용)
+    // 9. Save to cache (use longer TTL)
     cache.set(cacheKey, responseData, CACHE_TTL.VERY_LONG);
-    console.log('데이터 캐시 저장:', cacheKey, 'TTL:', CACHE_TTL.VERY_LONG);
+    console.log('Data cached:', cacheKey, 'TTL:', CACHE_TTL.VERY_LONG);
 
     return NextResponse.json(responseData, {
       headers: {
@@ -351,7 +348,7 @@ export async function GET() {
       const retryAfter = Math.ceil(
         (error.rateLimit?.reset || 0) - Date.now() / 1000
       );
-      console.error('GitHub API 레이트리밋 에러:', {
+      console.error('GitHub API rate limit error:', {
         remaining: error.rateLimit?.remaining,
         limit: error.rateLimit?.limit,
         reset: error.rateLimit?.reset,
@@ -360,8 +357,7 @@ export async function GET() {
 
       return NextResponse.json(
         {
-          error:
-            'GitHub API 레이트리밋에 도달했습니다. 잠시 후 다시 시도해주세요.',
+          error: 'GitHub API rate limit reached. Please try again later.',
           retryAfter,
           rateLimit: {
             remaining: error.rateLimit?.remaining || 0,
@@ -385,13 +381,13 @@ export async function GET() {
 
     if (isGitHubAPIError(error)) {
       return NextResponse.json(
-        { error: 'GitHub API 오류가 발생했습니다.' },
+        { error: 'GitHub API error occurred.' },
         { status: error.status || 500 }
       );
     }
 
     return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
+      { error: 'Server error occurred.' },
       { status: 500 }
     );
   }

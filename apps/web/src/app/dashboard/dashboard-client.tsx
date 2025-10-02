@@ -8,7 +8,7 @@ import { TopReposTable } from '@/components/TopReposTable';
 import ShareModal from '@/components/ShareModal';
 import ReportModal from '@/components/ReportModal';
 
-// API 응답 타입 정의
+// API response type definition
 interface OverviewData {
   range: '14d';
   totals: {
@@ -32,7 +32,7 @@ export default function DashboardClient() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
-  // 실제 API 호출
+  // Actual API call
   const { data: overviewData, error } = useQuery({
     queryKey: ['overview'],
     queryFn: async () => {
@@ -43,7 +43,7 @@ export default function DashboardClient() {
       return response.json() as Promise<OverviewData>;
     },
     retry: (failureCount, error) => {
-      // 레이트리밋 에러 시 재시도하지 않음
+      // Do not retry on rate limit error
       if (error instanceof Error && error.message.includes('429')) {
         return false;
       }
@@ -56,9 +56,9 @@ export default function DashboardClient() {
       <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
         <div className='text-center'>
           <h2 className='text-2xl font-bold text-gray-900 mb-4'>
-            데이터를 불러올 수 없습니다
+            Unable to load data
           </h2>
-          <p className='text-gray-600'>잠시 후 다시 시도해주세요.</p>
+          <p className='text-gray-600'>Please try again later.</p>
         </div>
       </div>
     );
@@ -68,7 +68,7 @@ export default function DashboardClient() {
     return (
       <div className='min-h-screen bg-gray-50'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-          {/* 스켈레톤 로딩 */}
+          {/* Skeleton loading */}
           <div className='animate-pulse'>
             <div className='h-8 bg-gray-200 rounded w-1/4 mb-8'></div>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
@@ -152,7 +152,7 @@ export default function DashboardClient() {
                     d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
                   />
                 </svg>
-                로그아웃
+                Logout
               </button>
               <button
                 onClick={() => setIsShareModalOpen(true)}
@@ -172,7 +172,7 @@ export default function DashboardClient() {
                     d='M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z'
                   />
                 </svg>
-                공유하기
+                Share
               </button>
               <button
                 onClick={() => setIsReportModalOpen(true)}
@@ -192,13 +192,13 @@ export default function DashboardClient() {
                     d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
                   />
                 </svg>
-                리포트 생성
+                Generate Report
               </button>
             </div>
           </div>
         </div>
 
-        {/* KPI 카드들 */}
+        {/* KPI cards */}
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
           <div className='bg-white p-6 rounded-lg shadow'>
             <div className='flex items-center'>
@@ -224,7 +224,9 @@ export default function DashboardClient() {
                 </div>
               </div>
               <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-500'>14일 Views</p>
+                <p className='text-sm font-medium text-gray-500'>
+                  14-day Views
+                </p>
                 <p className='text-2xl font-semibold text-gray-900'>
                   {overviewData.totals.views_14d.toLocaleString()}
                 </p>
@@ -269,10 +271,10 @@ export default function DashboardClient() {
           </div>
         </div>
 
-        {/* 차트 영역 */}
+        {/* Chart area */}
         <ViewsChart data={overviewData.timeseries} loading={!overviewData} />
 
-        {/* 상위 리포지토리 테이블 */}
+        {/* Top repositories table */}
         <div className='mt-8'>
           <TopReposTable
             repos={overviewData.top_repos}
@@ -280,7 +282,7 @@ export default function DashboardClient() {
           />
         </div>
 
-        {/* 공유 모달 */}
+        {/* Share modal */}
         {overviewData && session?.user?.name && (
           <ShareModal
             isOpen={isShareModalOpen}
@@ -299,7 +301,7 @@ export default function DashboardClient() {
           />
         )}
 
-        {/* 리포트 모달 */}
+        {/* Report modal */}
         {session?.user && (
           <ReportModal
             isOpen={isReportModalOpen}

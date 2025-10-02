@@ -1,5 +1,5 @@
 /**
- * 브랜딩 문구 생성 유틸리티
+ * Branding copy generation utility
  */
 
 export interface BrandCopyParams {
@@ -9,16 +9,16 @@ export interface BrandCopyParams {
 }
 
 /**
- * GitHub Pulse 브랜딩 문구 생성
- * @param params 브랜딩 문구 생성에 필요한 데이터
- * @returns 생성된 브랜딩 문구
+ * Generate GitHub Pulse branding copy
+ * @param params Data needed for branding copy generation
+ * @returns Generated branding copy
  */
 export function makeBrandCopy({
   starsTotal,
   views14d,
   topRepoName,
 }: BrandCopyParams): string {
-  // 숫자 포맷팅 함수
+  // Number formatting function
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
       return `${(num / 1000000).toFixed(1)}M`;
@@ -32,11 +32,11 @@ export function makeBrandCopy({
   const formattedStars = formatNumber(starsTotal);
   const formattedViews = formatNumber(views14d);
 
-  return `총 ⭐:${formattedStars}, 14일 내 방문자: ${formattedViews}, Top repo: ${topRepoName}`;
+  return `Total ⭐:${formattedStars}, 14-day visitors: ${formattedViews}, Top repo: ${topRepoName}`;
 }
 
 /**
- * 짧은 버전의 브랜딩 문구 (OG 이미지용)
+ * Short version of branding copy (for OG images)
  */
 export function makeShortBrandCopy({
   starsTotal,
@@ -60,7 +60,7 @@ export function makeShortBrandCopy({
 }
 
 /**
- * 대시보드용 요약 문구
+ * Dashboard summary copy
  */
 export function makeDashboardSummary({
   starsTotal,
@@ -81,7 +81,7 @@ export function makeDashboardSummary({
     return num.toString();
   };
 
-  return `총 ${reposCount}개 리포지토리에서 ${formatNumber(
+  return `Total ${reposCount} repositories with ${formatNumber(
     starsTotal
-  )}개의 스타와 ${formatNumber(views14d)}번의 방문을 기록했어요!`;
+  )} stars and ${formatNumber(views14d)} visits!`;
 }

@@ -43,7 +43,7 @@ export class PDFService {
 
       const page = await browser.newPage();
 
-      // 페이지 설정
+      // Page settings
       await page.setViewport({ width: 1200, height: 800 });
       await page.setDefaultNavigationTimeout(30000);
 
@@ -70,7 +70,7 @@ export class PDFService {
         displayHeaderFooter: false,
       });
 
-      // 파일이 제대로 생성되었는지 확인
+      // Check if file was created properly
       if (!fs.existsSync(filepath)) {
         throw new Error('PDF file was not created');
       }

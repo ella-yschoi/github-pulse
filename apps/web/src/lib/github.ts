@@ -28,12 +28,12 @@ export class RateLimitError extends GitHubAPIError {
 }
 
 /**
- * GitHub API 호출을 위한 유틸리티 함수 (백오프 전략 포함)
- * @param accessToken GitHub OAuth 액세스 토큰
- * @param path API 경로 (예: "/user/repos")
- * @param init 추가 fetch 옵션
- * @param retryCount 재시도 횟수 (기본값: 0)
- * @returns GitHub API 응답 데이터
+ * GitHub API utility function with backoff strategy
+ * @param accessToken GitHub OAuth access token
+ * @param path API path (e.g., "/user/repos")
+ * @param init Additional fetch options
+ * @param retryCount Retry count (default: 0)
+ * @returns GitHub API response data
  */
 export async function gh(
   accessToken: string,
@@ -45,7 +45,7 @@ export async function gh(
   const url = `${baseURL}${path}`;
 
   const headers = {
-    // OAuth 토큰 및 classic 토큰 모두 허용 (`Bearer`/`token` 모두 수용됨)
+    // Accept both OAuth and classic tokens (`Bearer`/`token` both supported)
     Authorization: `Bearer ${accessToken}`,
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
@@ -59,7 +59,7 @@ export async function gh(
       headers,
     });
 
-    // Rate limit 정보 파싱 (헤더 부재 시 undefined 처리)
+    // Parse rate limit info (handle undefined when headers are missing)
     const limitHeader = response.headers.get('X-RateLimit-Limit');
     const remainingHeader = response.headers.get('X-RateLimit-Remaining');
     const resetHeader = response.headers.get('X-RateLimit-Reset');
@@ -76,22 +76,22 @@ export async function gh(
         }
       : undefined;
 
-    // 헤더가 있을 때만 경고/차단 로직 수행
+    // Only perform warning/blocking logic when headers exist
     if (rateLimit) {
       if (rateLimit.remaining <= 10) {
         console.warn(
-          `GitHub API 레이트리밋 경고: ${rateLimit.remaining}/${rateLimit.limit} 남음`
+          `GitHub API rate limit warning: ${rateLimit.remaining}/${rateLimit.limit} remaining`
         );
       }
 
       if (rateLimit.remaining === 0) {
-        // 성공 응답이더라도 남은 횟수가 0이고, 잠시 후 요청해야 함
+        // Even for successful responses, if remaining count is 0, need to wait
         throw new RateLimitError(rateLimit);
       }
     }
 
     if (!response.ok) {
-      // 429 에러는 별도 처리 (헤더 없으면 최소 백오프 제공)
+      // 429 errors are handled separately (provide minimum backoff if no headers)
       if (response.status === 429) {
         const fallbackRateLimit: RateLimitInfo = rateLimit || {
           limit: 0,
@@ -115,11 +115,11 @@ export async function gh(
     return await response.json();
   } catch (error) {
     if (error instanceof GitHubAPIError) {
-      // 레이트리밋 에러이고 재시도 가능한 경우
+      // Rate limit error and retryable case
       if (error instanceof RateLimitError && retryCount < 2) {
         const backoffTime = getBackoffTime(error.rateLimit!);
         console.warn(
-          `레이트리밋 에러로 인한 백오프: ${backoffTime}ms 후 재시도 (${
+          `Backoff due to rate limit error: ${backoffTime}ms before retry (${
             retryCount + 1
           }/2)`
         );
@@ -130,7 +130,7 @@ export async function gh(
       throw error;
     }
 
-    // 네트워크 에러 등
+    // Network errors etc.
     throw new GitHubAPIError(
       error instanceof Error ? error.message : 'Network error',
       0
@@ -139,28 +139,28 @@ export async function gh(
 }
 
 /**
- * 레이트리밋 에러 시 백오프 시간 계산
- * @param rateLimit 레이트리밋 정보
- * @returns 대기 시간 (밀리초)
+ * Calculate backoff time for rate limit errors
+ * @param rateLimit Rate limit information
+ * @returns Wait time (in milliseconds)
  */
 export function getBackoffTime(rateLimit: RateLimitInfo): number {
-  const resetTime = rateLimit.reset * 1000; // Unix timestamp를 밀리초로 변환
+  const resetTime = rateLimit.reset * 1000; // Convert Unix timestamp to milliseconds
   const now = Date.now();
   const timeUntilReset = resetTime - now;
 
-  // 리셋 시간까지의 시간이 0보다 크면 그 시간만큼, 아니면 최소 30초
-  return Math.max(timeUntilReset + 1000, 30000); // 최소 30초, 리셋 시간 + 1초
+  // If time until reset is greater than 0, use that time, otherwise minimum 30 seconds
+  return Math.max(timeUntilReset + 1000, 30000); // Minimum 30 seconds, reset time + 1 second
 }
 
 /**
- * 에러가 레이트리밋 에러인지 확인
+ * Check if error is a rate limit error
  */
 export function isRateLimitError(error: unknown): error is RateLimitError {
   return error instanceof RateLimitError;
 }
 
 /**
- * 에러가 GitHub API 에러인지 확인
+ * Check if error is a GitHub API error
  */
 export function isGitHubAPIError(error: unknown): error is GitHubAPIError {
   return error instanceof GitHubAPIError;

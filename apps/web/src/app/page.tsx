@@ -10,7 +10,7 @@ export default async function Home() {
     redirect('/dashboard');
   }
 
-  // 직접 GitHub OAuth URL 생성
+  // Generate GitHub OAuth URL directly
   const githubOAuthURL = await getGitHubOAuthURL();
 
   return (

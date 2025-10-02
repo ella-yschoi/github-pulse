@@ -1,7 +1,7 @@
 import { NextAuthOptions } from 'next-auth';
 import GitHubProvider from 'next-auth/providers/github';
 
-// 세션 타입 확장
+// Session type extension
 declare module 'next-auth' {
   interface Session {
     accessToken?: string;
@@ -21,7 +21,7 @@ declare module 'next-auth/jwt' {
   }
 }
 
-// GitHub 프로필 타입 확장
+// GitHub profile type extension
 interface GitHubProfile {
   login: string;
   id: number;
@@ -71,11 +71,11 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, account, profile }) {
-      // GitHub 액세스 토큰을 JWT에 저장
+      // Store GitHub access token in JWT
       if (account?.access_token) {
         token.accessToken = account.access_token;
 
-        // GitHub API를 통해 사용자 정보 가져오기
+        // Get user information through GitHub API
         try {
           const response = await fetch('https://api.github.com/user', {
             headers: {
@@ -93,7 +93,7 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // 프로필에서도 시도
+      // Try from profile as well
       if (profile && 'login' in profile) {
         token.username = (profile as GitHubProfile).login;
       }
@@ -101,18 +101,18 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      // 세션에 GitHub 토큰과 사용자 정보 저장
+      // Store GitHub token and user information in session
       if (token.accessToken) {
         session.accessToken = token.accessToken;
       }
-      // GitHub username을 세션에 추가
+      // Add GitHub username to session
       if (token.username) {
         session.user.username = token.username;
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // 로그인 성공 후 대시보드로 리다이렉트
+      // Redirect to dashboard after successful login
       if (url.startsWith('/')) return `${baseUrl}${url}`;
       else if (new URL(url).origin === baseUrl) return url;
       return `${baseUrl}/dashboard`;
@@ -120,9 +120,9 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30일 (초 단위)
+    maxAge: 30 * 24 * 60 * 60, // 30 days (in seconds)
   },
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30일 (초 단위)
+    maxAge: 30 * 24 * 60 * 60, // 30 days (in seconds)
   },
 };

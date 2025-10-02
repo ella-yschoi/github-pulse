@@ -49,7 +49,7 @@ export function TopReposTable({ repos, loading = false }: TopReposTableProps) {
     return (
       <div className='bg-white p-6 rounded-lg shadow-sm border'>
         <h2 className='text-xl font-semibold text-gray-900 mb-4'>
-          상위 리포지토리
+          Top Repositories
         </h2>
         <div className='text-center py-8 text-gray-500'>
           <svg
@@ -65,7 +65,7 @@ export function TopReposTable({ repos, loading = false }: TopReposTableProps) {
               d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
             />
           </svg>
-          <p>리포지토리 데이터가 없습니다</p>
+          <p>No repository data available</p>
         </div>
       </div>
     );
@@ -74,8 +74,10 @@ export function TopReposTable({ repos, loading = false }: TopReposTableProps) {
   return (
     <div className='bg-white p-6 rounded-lg shadow-sm border'>
       <div className='flex items-center justify-between mb-6'>
-        <h2 className='text-xl font-semibold text-gray-900'>상위 리포지토리</h2>
-        <div className='text-sm text-gray-500'>최근 14일 기준</div>
+        <h2 className='text-xl font-semibold text-gray-900'>
+          Top Repositories
+        </h2>
+        <div className='text-sm text-gray-500'>Based on last 14 days</div>
       </div>
 
       <div className='overflow-hidden'>
@@ -86,16 +88,16 @@ export function TopReposTable({ repos, loading = false }: TopReposTableProps) {
                 #
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                리포지토리
+                Repository
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                스타
+                Stars
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                14일 Views
+                14-day Views
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                트렌드
+                Trend
               </th>
             </tr>
           </thead>
