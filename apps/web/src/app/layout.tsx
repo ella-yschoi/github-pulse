@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'GitHub Pulse - 개인 리포지토리 분석 대시보드',
+  title: 'GitHub Pulse - Personal Repository Analytics Dashboard',
   description:
-    'GitHub 리포지토리 분석 대시보드입니다. 14일 트래픽/스타 기반 KPI 카드와 공유 가능한 OG 이미지를 제공합니다.',
+    'GitHub repository analytics dashboard. Provides 14-day traffic/star-based KPI cards and shareable OG images.',
 };
 
 export default function RootLayout({
@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='ko'>
+    <html lang='en'>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

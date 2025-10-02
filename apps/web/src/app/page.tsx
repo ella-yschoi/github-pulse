@@ -28,14 +28,14 @@ export default async function Home() {
             </h1>
           </div>
           <p className='text-lg text-gray-600 mb-8'>
-            개인 리포지토리 분석 대시보드
+            Personal Repository Analytics Dashboard
           </p>
         </div>
 
         <div className='bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10'>
           <div className='text-center'>
             <p className='text-gray-600 mb-6'>
-              GitHub 로그인 후 리포지토리를 분석해보세요.
+              Sign in with GitHub to analyze your repositories
             </p>
 
             <a
@@ -53,16 +53,9 @@ export default async function Home() {
                   clipRule='evenodd'
                 />
               </svg>
-              GitHub로 로그인
+              Sign in with GitHub
             </a>
           </div>
-        </div>
-
-        <div className='mt-8 text-center'>
-          <p className='text-sm text-gray-500'>
-            로그인하면 14일간의 리포지토리 트래픽과 스타 통계를 확인할 수
-            있습니다.
-          </p>
         </div>
       </div>
     </div>

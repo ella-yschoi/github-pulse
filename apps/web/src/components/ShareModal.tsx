@@ -107,7 +107,7 @@ export default function ShareModal({
         <div className='relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
           {/* 헤더 */}
           <div className='flex items-center justify-between p-6 border-b'>
-            <h2 className='text-xl font-semibold text-gray-900'>공유하기</h2>
+            <h2 className='text-xl font-semibold text-gray-900'>Share</h2>
             <button
               onClick={onClose}
               className='text-gray-400 hover:text-gray-600 transition-colors'
@@ -121,7 +121,7 @@ export default function ShareModal({
             {/* OG 이미지 미리보기 */}
             <div>
               <div className='flex items-center justify-between mb-4'>
-                <h3 className='text-lg font-medium text-gray-900'>미리보기</h3>
+                <h3 className='text-lg font-medium text-gray-900'>Preview</h3>
                 <button
                   onClick={copyImage}
                   className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
@@ -135,7 +135,7 @@ export default function ShareModal({
                   ) : (
                     <Copy className='w-4 h-4' />
                   )}
-                  {imageCopied ? '복사됨!' : '이미지 복사'}
+                  {imageCopied ? 'Copied!' : 'Copy Image'}
                 </button>
               </div>
               <div className='flex flex-col items-center'>
@@ -152,7 +152,7 @@ export default function ShareModal({
                   </div>
                 </div>
                 <p className='text-sm text-gray-500 mt-2 text-center'>
-                  이 이미지가 표시될 예정이에요
+                  This is how the image will appear
                 </p>
               </div>
             </div>
@@ -160,7 +160,7 @@ export default function ShareModal({
             {/* 공유 링크 */}
             <div>
               <h3 className='text-lg font-medium text-gray-900 mb-4'>
-                공유 링크
+                Share Link
               </h3>
               <div className='flex gap-2'>
                 <input
@@ -182,11 +182,11 @@ export default function ShareModal({
                   ) : (
                     <Copy className='w-4 h-4' />
                   )}
-                  {linkCopied ? '복사됨!' : '링크 복사'}
+                  {linkCopied ? 'Copied!' : 'Copy Link'}
                 </button>
               </div>
               <p className='text-sm text-gray-500 mt-2'>
-                이 링크를 복사해 대시보드를 공유해보세요
+                Copy this link to share your dashboard
               </p>
             </div>
           </div>

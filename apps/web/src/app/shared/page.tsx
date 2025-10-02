@@ -60,7 +60,7 @@ function SharedContent() {
   return (
     <div className='min-h-screen bg-gray-50'>
       <div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-        {/* 헤더 */}
+        {/* Header */}
         <div className='text-center mb-8'>
           <div className='flex items-center justify-center gap-2 mb-4'>
             <img
@@ -77,10 +77,10 @@ function SharedContent() {
           </p>
         </div>
 
-        {/* 통계 요약 */}
+        {/* Statistics Summary */}
         <div className='bg-white p-6 rounded-lg shadow-sm border mb-8'>
           <h2 className='text-xl font-semibold text-gray-900 mb-6 text-center'>
-            주요 통계
+            Key Statistics
           </h2>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
             <div className='text-center'>
@@ -104,11 +104,11 @@ function SharedContent() {
           </div>
         </div>
 
-        {/* 상위 3개 리포 간단 리스트 */}
+        {/* Top 3 Repositories List */}
         {top3.length > 0 && (
           <div className='bg-white p-6 rounded-lg shadow-sm border mb-8'>
             <h2 className='text-xl font-semibold text-gray-900 mb-4 text-center'>
-              상위 리포지토리 Top 3
+              Top 3 Repositories
             </h2>
             <ul className='divide-y divide-gray-100'>
               {top3.map((r) => (
@@ -145,10 +145,10 @@ function SharedContent() {
           </div>
         )}
 
-        {/* 공유 링크 */}
+        {/* Share Link */}
         <div className='bg-white p-6 rounded-lg shadow-sm border mb-8'>
           <h2 className='text-xl font-semibold text-gray-900 mb-4 text-center'>
-            이 페이지 공유하기
+            Share This Page
           </h2>
           <div className='flex gap-4'>
             <input
@@ -165,11 +165,11 @@ function SharedContent() {
                   : 'bg-emerald-500 text-white hover:bg-emerald-600'
               }`}
             >
-              {copied ? '복사됨!' : '복사'}
+              {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
           <p className='text-sm text-gray-500 mt-2 text-center'>
-            이 링크를 복사해 대시보드를 공유해보세요
+            Copy this link to share your dashboard
           </p>
         </div>
 
@@ -177,10 +177,10 @@ function SharedContent() {
         <div className='text-center'>
           <div className='bg-emerald-50 p-6 rounded-lg'>
             <h3 className='text-lg font-semibold text-emerald-900 mb-2'>
-              나만의 GitHub Pulse 만들기
+              Create Your Own GitHub Pulse
             </h3>
             <p className='text-emerald-700 mb-4'>
-              GitHub 계정으로 로그인해 나만의 대시보드를 만들어보세요
+              Sign in with your GitHub account to create your own dashboard
             </p>
             <Link
               href='/'
@@ -198,7 +198,7 @@ function SharedContent() {
                   clipRule='evenodd'
                 />
               </svg>
-              GitHub로 로그인하기
+              Sign in with GitHub
             </Link>
           </div>
         </div>

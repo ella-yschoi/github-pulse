@@ -59,11 +59,11 @@ export default function ReportModal({
       if (data.success) {
         setGeneratedReport(data);
       } else {
-        alert('리포트 생성에 실패했습니다.');
+        alert('Failed to generate report.');
       }
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('리포트 생성 중 오류가 발생했습니다.');
+      alert('An error occurred while generating the report.');
     } finally {
       setIsGenerating(false);
     }
@@ -94,11 +94,11 @@ export default function ReportModal({
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        alert('다운로드에 실패했습니다.');
+        alert('Download failed.');
       }
     } catch (error) {
       console.error('Error downloading report:', error);
-      alert('다운로드 중 오류가 발생했습니다.');
+      alert('An error occurred during download.');
     } finally {
       setIsDownloading(false);
     }
@@ -108,7 +108,9 @@ export default function ReportModal({
     <div className='fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50'>
       <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
         <div className='flex justify-between items-center mb-4'>
-          <h2 className='text-xl font-bold text-gray-900'>주간 리포트 생성</h2>
+          <h2 className='text-xl font-bold text-gray-900'>
+            Generate Weekly Report
+          </h2>
           <button
             onClick={onClose}
             className='text-gray-400 hover:text-gray-600'
@@ -127,12 +129,12 @@ export default function ReportModal({
             {isGenerating ? (
               <>
                 <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
-                생성 중...
+                Generating...
               </>
             ) : (
               <>
                 <FileText className='h-4 w-4 mr-2' />
-                리포트 생성
+                Generate Report
               </>
             )}
           </button>
@@ -147,12 +149,12 @@ export default function ReportModal({
               {isDownloading ? (
                 <>
                   <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
-                  다운로드 중...
+                  Downloading...
                 </>
               ) : (
                 <>
                   <Download className='h-4 w-4 mr-2' />
-                  PDF 다운로드
+                  Download PDF
                 </>
               )}
             </button>
@@ -162,7 +164,7 @@ export default function ReportModal({
           {generatedReport && (
             <div className='bg-green-50 border border-green-200 rounded-md p-3'>
               <p className='text-sm text-green-800'>
-                ✅ 리포트가 성공적으로 생성되었습니다!
+                ✅ Report generated successfully!
               </p>
             </div>
           )}

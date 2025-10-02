@@ -37,7 +37,7 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
     return (
       <div className='bg-white p-6 rounded-lg shadow-sm border'>
         <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-          14일 Views 트렌드
+          14-day Views Trend
         </h3>
         <div className='h-64 flex items-center justify-center text-gray-500'>
           <div className='text-center'>
@@ -54,7 +54,7 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
                 d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
               />
             </svg>
-            <p className='mt-2 text-sm'>데이터가 없습니다</p>
+            <p className='mt-2 text-sm'>No data available</p>
           </div>
         </div>
       </div>
@@ -63,7 +63,7 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
 
   const formattedData = data.map((item) => ({
     ...item,
-    date: new Date(item.date).toLocaleDateString('ko-KR', {
+    date: new Date(item.date).toLocaleDateString('en-US', {
       month: '2-digit',
       day: '2-digit',
     }),
@@ -73,7 +73,7 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
     <div className='bg-white p-6 rounded-lg shadow-sm border'>
       <div className='flex items-center justify-between mb-4'>
         <h3 className='text-lg font-semibold text-gray-900'>
-          14일 Views 트렌드
+          14-day Views Trend
         </h3>
         <div className='flex items-center space-x-4 text-sm text-gray-600'>
           <div className='flex items-center'>
@@ -120,7 +120,7 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
                 value.toLocaleString(),
                 name === 'views' ? 'Views' : 'Unique Visitors',
               ]}
-              labelFormatter={(label) => `날짜: ${label}`}
+              labelFormatter={(label) => `Date: ${label}`}
             />
             <Line
               type='monotone'

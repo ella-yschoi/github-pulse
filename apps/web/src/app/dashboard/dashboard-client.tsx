@@ -92,12 +92,12 @@ export default function DashboardClient() {
   return (
     <div className='min-h-screen bg-gray-50'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-        {/* 헤더 */}
+        {/* Header */}
         <div className='mb-8'>
           <div className='flex items-center justify-between'>
             <div>
               <h1 className='text-3xl font-bold text-gray-900'>
-                안녕하세요, {session?.user?.name}님! 👋
+                Hello, {session?.user?.name}! 👋
               </h1>
               <div className='mt-3 flex flex-wrap items-center gap-2'>
                 <span className='inline-flex items-center rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-200'>
@@ -110,7 +110,7 @@ export default function DashboardClient() {
 
                 <span className='inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800 ring-1 ring-inset ring-blue-200'>
                   <span className='mr-1'>👀</span>
-                  14일 Views:
+                  14-day Views:
                   <span className='ml-1 font-semibold'>
                     {overviewData.totals.views_14d.toLocaleString()}
                   </span>

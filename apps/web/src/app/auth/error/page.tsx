@@ -11,13 +11,13 @@ function ErrorContent() {
   const getErrorMessage = (error: string | null) => {
     switch (error) {
       case 'Configuration':
-        return '서버 설정에 문제가 있습니다.';
+        return 'There is a problem with server configuration.';
       case 'AccessDenied':
-        return '접근이 거부되었습니다.';
+        return 'Access denied.';
       case 'Verification':
-        return '인증 토큰이 만료되었거나 잘못되었습니다.';
+        return 'Authentication token has expired or is invalid.';
       default:
-        return '로그인 중 오류가 발생했습니다.';
+        return 'An error occurred during login.';
     }
   };
 
@@ -29,7 +29,7 @@ function ErrorContent() {
             GitHub Pulse
           </h1>
           <p className='text-lg text-gray-600 mb-8'>
-            개인 리포지토리 분석 대시보드
+            Personal Repository Analytics Dashboard
           </p>
         </div>
 
@@ -52,7 +52,7 @@ function ErrorContent() {
             </div>
 
             <h2 className='text-2xl font-semibold text-gray-900 mb-4'>
-              로그인 오류
+              Login Error
             </h2>
 
             <p className='text-gray-600 mb-6'>{getErrorMessage(error)}</p>
@@ -62,14 +62,14 @@ function ErrorContent() {
                 href='/api/auth/signin'
                 className='w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors'
               >
-                다시 로그인하기
+                Re-login
               </Link>
 
               <Link
                 href='/'
                 className='w-full flex justify-center py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors'
               >
-                홈으로 돌아가기
+                Go Home
               </Link>
             </div>
           </div>
@@ -77,7 +77,7 @@ function ErrorContent() {
 
         <div className='mt-8 text-center'>
           <p className='text-sm text-gray-500'>
-            문제가 지속되면 관리자에게 문의해주세요.
+            Please contact the administrator if the problem persists.
           </p>
         </div>
       </div>
