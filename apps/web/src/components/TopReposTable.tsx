@@ -48,9 +48,17 @@ export function TopReposTable({ repos, loading = false }: TopReposTableProps) {
   if (!repos || repos.length === 0) {
     return (
       <div className='bg-white p-6 rounded-lg shadow-sm border'>
-        <h2 className='text-xl font-semibold text-gray-900 mb-4'>
-          Top Repositories
-        </h2>
+        <div className='flex items-center mb-4'>
+          <div className='w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3'>
+            <span className='text-purple-600 text-lg'>🏆</span>
+          </div>
+          <h2 className='text-xl font-semibold text-gray-900'>
+            Top Repositories
+          </h2>
+          <span className='ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full'>
+            14 days
+          </span>
+        </div>
         <div className='text-center py-8 text-gray-500'>
           <svg
             className='mx-auto h-12 w-12 text-gray-400 mb-4'
@@ -74,12 +82,16 @@ export function TopReposTable({ repos, loading = false }: TopReposTableProps) {
   return (
     <div className='bg-white p-4 sm:p-6 rounded-lg shadow-sm border'>
       <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0'>
-        <h2 className='text-lg sm:text-xl font-semibold text-gray-900'>
-          Top Repositories
-        </h2>
-        <div className='text-xs sm:text-sm text-gray-500'>
-          <span className='hidden sm:inline'>Based on last 14 days</span>
-          <span className='sm:hidden'>Last 14 days</span>
+        <div className='flex items-center'>
+          <div className='w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3'>
+            <span className='text-purple-600 text-lg'>🏆</span>
+          </div>
+          <h2 className='text-lg sm:text-xl font-semibold text-gray-900'>
+            Top Repositories
+          </h2>
+          <span className='ml-auto sm:ml-3 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full'>
+            14 days
+          </span>
         </div>
       </div>
 
@@ -236,6 +248,12 @@ export function TopReposTable({ repos, loading = false }: TopReposTableProps) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className='mt-6 pt-3 border-t border-gray-100'>
+        <div className='text-xs text-gray-500 items-center justify-between'>
+          Repositories with stars are ranked by 14-day view count
+        </div>
       </div>
     </div>
   );

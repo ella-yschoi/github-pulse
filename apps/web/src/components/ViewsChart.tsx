@@ -49,10 +49,18 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className='bg-white p-4 sm:p-6 rounded-lg shadow-sm border'>
-        <h3 className='text-base sm:text-lg font-semibold text-gray-900 mb-4'>
-          <span className='hidden sm:inline'>14-day Views Trend</span>
-          <span className='sm:hidden'>Views Trend</span>
-        </h3>
+        <div className='flex items-center mb-4'>
+          <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3'>
+            <span className='text-blue-600 text-lg'>📈</span>
+          </div>
+          <h3 className='text-base sm:text-lg font-semibold text-gray-900'>
+            <span className='hidden sm:inline'>14-day Views Trend</span>
+            <span className='sm:hidden'>Views Trend</span>
+          </h3>
+          <span className='ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full'>
+            14 days
+          </span>
+        </div>
         <div className='h-48 sm:h-64 flex items-center justify-center text-gray-500'>
           <div className='text-center'>
             <svg
@@ -86,10 +94,15 @@ export function ViewsChart({ data, loading = false }: ViewsChartProps) {
   return (
     <div className='bg-white p-4 sm:p-6 rounded-lg shadow-sm border'>
       <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0'>
-        <h3 className='text-base sm:text-lg font-semibold text-gray-900'>
-          <span className='hidden sm:inline'>14-day Views Trend</span>
-          <span className='sm:hidden'>Views Trend</span>
-        </h3>
+        <div className='flex items-center'>
+          <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3'>
+            <span className='text-blue-600 text-lg'>📈</span>
+          </div>
+          <h3 className='text-base sm:text-lg font-semibold text-gray-900'>
+            <span className='hidden sm:inline'>14-day Views Trend</span>
+            <span className='sm:hidden'>Views Trend</span>
+          </h3>
+        </div>
         <div className='flex items-center justify-center sm:justify-end space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-600'>
           <div className='flex items-center'>
             <div className='w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full mr-1 sm:mr-2'></div>
