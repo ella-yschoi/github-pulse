@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ViewsChart } from '@/components/ViewsChart';
 import { TopReposTable } from '@/components/TopReposTable';
+import { AiSummaryCard } from '@/components/AiSummaryCard';
 import ShareModal from '@/components/ShareModal';
 import ReportModal from '@/components/ReportModal';
 
@@ -347,6 +348,16 @@ export default function DashboardClient() {
             </div>
           </div>
         </div>
+
+        {/* Activity Summary by AI Card */}
+        {overviewData.top_repos?.[0]?.full_name && (
+          <div className='mb-6 sm:mb-8'>
+            <AiSummaryCard
+              repo={overviewData.top_repos[0].full_name}
+              period='14d'
+            />
+          </div>
+        )}
 
         {/* Chart area */}
         <ViewsChart data={overviewData.timeseries} loading={!overviewData} />
