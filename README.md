@@ -2,6 +2,8 @@
 
 A GitHub repository analytics dashboard and reporting system for personal repositories
 
+![Home Dashboard](apps/web/public/images/demo-1-home.png)
+
 <br/>
 
 ## 🚀 Key Features
@@ -14,6 +16,7 @@ A GitHub repository analytics dashboard and reporting system for personal reposi
 - **Sharing Capabilities**: Generate shareable links with custom OG images
 - **Responsive Design**: Modern UI built with Tailwind CSS
 - **Weekly Reports**: Generate and download PDF reports directly from the dashboard
+- **Activity Summary by AI**: OpenAI-powered summaries of recent repository activities (issues, PRs, commits)
 - **Public Share Pages**: External pages for sharing GitHub activity stats
 - **Brand Copy Generation**: Dynamic branding messages based on user metrics
 
@@ -21,6 +24,7 @@ A GitHub repository analytics dashboard and reporting system for personal reposi
 
 - **GitHub API Integration**: Data collection from GitHub REST API for user-owned repositories
 - **PDF Report Generation**: Create detailed weekly reports using Puppeteer
+- **AI Summary Generation**: OpenAI GPT-4o-mini integration for intelligent activity summaries
 - **Data Filtering**: Analyze only user-owned repositories (excludes forks and organizations)
 - **Error Handling**: Graceful degradation with rate limit handling and retry logic
 - **Memory Caching**: 5-minute TTL caching for improved performance
@@ -40,6 +44,7 @@ A GitHub repository analytics dashboard and reporting system for personal reposi
 - **TanStack Query ^5.87.4** (Data fetching)
 - **Recharts ^3.2.0** (Data visualization)
 - **@vercel/og ^0.8.5** (OG image generation)
+- **OpenAI ^4.58.0** (AI-powered activity summaries)
 
 ### Backend
 
@@ -61,6 +66,7 @@ GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
 NEXTAUTH_SECRET=your_nextauth_secret
 NEXTAUTH_URL=https://github-pulse.vercel.app
+OPENAI_API_KEY=your_openai_api_key
 ```
 
 #### Backend (.env)
