@@ -81,18 +81,16 @@ export function TopReposTable({ repos, loading = false }: TopReposTableProps) {
 
   return (
     <div className='bg-white p-4 sm:p-6 rounded-lg shadow-sm border'>
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0'>
-        <div className='flex items-center'>
-          <div className='w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3'>
-            <span className='text-purple-600 text-lg'>🏆</span>
-          </div>
-          <h2 className='text-lg sm:text-xl font-semibold text-gray-900'>
-            Top Repositories
-          </h2>
-          <span className='ml-auto sm:ml-3 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full'>
-            14 days
-          </span>
+      <div className='flex items-center mb-4 sm:mb-6'>
+        <div className='w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3'>
+          <span className='text-purple-600 text-lg'>🏆</span>
         </div>
+        <h2 className='text-lg sm:text-xl font-semibold text-gray-900'>
+          Top Repositories
+        </h2>
+        <span className='ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full'>
+          14 days
+        </span>
       </div>
 
       {/* Desktop table */}
