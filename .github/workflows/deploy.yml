@@ -1,0 +1,98 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (e.g., staging, production)'
+        required: false
+        default: 'staging'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build frontend and backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: apps/backend
+        run: npm ci
+
+      - name: Build web
+        working-directory: apps/web
+        run: npm run build
+
+      - name: Build backend
+        working-directory: apps/backend
+        run: npm run build
+
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: |
+            apps/web/.next
+            apps/web/package.json
+            apps/web/next.config.js
+            apps/web/public
+            apps/web/tsconfig.json
+
+      - name: Upload backend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: |
+            apps/backend/dist
+            apps/backend/package.json
+            apps/backend/tsconfig.json
+
+  deploy:
+    name: Deploy via Python script (no-op if secrets missing)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f scripts/requirements.txt ]; then pip install -r scripts/requirements.txt; fi
+
+      - name: Run deploy script
+        env:
+          DEPLOY_ENV: ${{ github.event.inputs.environment }}
+          DEPLOY_TARGET: ${{ secrets.DEPLOY_TARGET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          python scripts/deploy.py --artifacts ./artifacts --env "${DEPLOY_ENV:-staging}"
