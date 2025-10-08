@@ -1,34 +1,104 @@
 'use client';
 
+import { Suspense, useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense, useCallback } from 'react';
-import { shortenUrl } from '@/lib/shorten';
 
-function SharedContent() {
-  const searchParams = useSearchParams();
+// Base64 decoding for parameter restoration
+function decodeCompressedUrl(encoded: string): Record<string, string> | null {
+  try {
+    const decoded = Buffer.from(encoded, 'base64').toString('utf-8');
+    const parts = decoded.split(',');
+
+    if (parts.length !== 6) return null; // Expecting 6 parts: u, s, v, t, r, top3
+
+    return {
+      u: parts[0],
+      s: parts[1],
+      v: parts[2],
+      t: parts[3],
+      r: parts[4],
+      top3: parts[5],
+    };
+  } catch (error) {
+    console.error('Error decoding compressed URL:', error);
+    return null;
+  }
+}
+
+function ShortUrlContent() {
+  const params = useParams();
+  const code = params.code as string;
+  const [data, setData] = useState<Record<string, string> | null>(null);
   const [copied, setCopied] = useState(false);
-  const [currentUrl, setCurrentUrl] = useState('');
   const [shortUrl, setShortUrl] = useState<string>('');
   const [isGeneratingShortUrl, setIsGeneratingShortUrl] = useState(false);
   const [shortUrlError, setShortUrlError] = useState<string>('');
 
-  // Extract data from URL parameters
-  const username =
-    searchParams.get('u') || searchParams.get('username') || 'GitHub User';
-  const stars = parseInt(
-    searchParams.get('s') || searchParams.get('stars') || '0'
-  );
-  const views = parseInt(
-    searchParams.get('v') || searchParams.get('views') || '0'
-  );
-  const topRepo =
-    searchParams.get('t') || searchParams.get('topRepo') || 'No repositories';
-  // const reposCount = parseInt(
-  //   searchParams.get('r') || searchParams.get('repos') || '0'
-  // );
-  const top3Raw = searchParams.get('top3') || '';
+  useEffect(() => {
+    if (!code) return;
+
+    // Decode compressed code to parameters
+    const decodedParams = decodeCompressedUrl(code);
+
+    if (!decodedParams) {
+      // If decoding fails, redirect to home page
+      window.location.href = '/';
+      return;
+    }
+
+    setData(decodedParams);
+  }, [code]);
+
+  // Generate short URL automatically when data is loaded
+  useEffect(() => {
+    if (data && !shortUrl && !isGeneratingShortUrl) {
+      generateShortUrl();
+    }
+  }, [data, shortUrl, isGeneratingShortUrl]);
+
+  // Generate short URL function
+  const generateShortUrl = async () => {
+    if (shortUrl) return; // Short URL already generated
+
+    setIsGeneratingShortUrl(true);
+    setShortUrlError('');
+
+    try {
+      // For short URL pages, use the current URL directly
+      const currentUrl = window.location.href;
+      setShortUrl(currentUrl);
+    } catch (err) {
+      console.error('Failed to generate short URL:', err);
+      setShortUrlError('Failed to generate short URL');
+    } finally {
+      setIsGeneratingShortUrl(false);
+    }
+  };
+
+  // Copy link function
+  const copyShareLink = async () => {
+    try {
+      const urlToCopy = shortUrl || window.location.href;
+      await navigator.clipboard.writeText(urlToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  if (!data) {
+    return <div>Loading...</div>;
+  }
+
+  // Parse data
+  const username = data.u || 'GitHub User';
+  const stars = parseInt(data.s || '0');
+  const views = parseInt(data.v || '0');
+  const topRepo = data.t || 'No repositories';
+  const top3Raw = data.top3 || '';
   const top3 = top3Raw
     .split(';')
     .map((rec) => rec.trim())
@@ -41,52 +111,6 @@ function SharedContent() {
         views_14d: Number(v) || 0,
       };
     });
-
-  // Generate short URL function
-  const generateShortUrl = useCallback(async () => {
-    if (shortUrl) return; // Short URL already generated
-
-    setIsGeneratingShortUrl(true);
-    setShortUrlError('');
-
-    try {
-      const originalUrl = window.location.href;
-      const result = await shortenUrl(originalUrl);
-
-      if ('error' in result) {
-        setShortUrlError(result.error);
-      } else {
-        setShortUrl(result.shortUrl);
-      }
-    } catch (err) {
-      console.error('Failed to generate short URL:', err);
-      setShortUrlError('Failed to generate short URL');
-    } finally {
-      setIsGeneratingShortUrl(false);
-    }
-  }, [shortUrl]);
-
-  // Set URL on client side and generate short URL
-  useEffect(() => {
-    setCurrentUrl(window.location.href);
-    generateShortUrl();
-  }, [generateShortUrl]);
-
-  // (Previous) ts-based chart removed
-
-  // Copy link function
-  const copyShareLink = async () => {
-    try {
-      const urlToCopy = shortUrl || currentUrl;
-      await navigator.clipboard.writeText(urlToCopy);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
-  // no og image; showing chart instead
 
   return (
     <div className='min-h-screen bg-gray-50'>
@@ -195,7 +219,7 @@ function SharedContent() {
           <div className='flex flex-col sm:flex-row gap-2 sm:gap-4'>
             <input
               type='text'
-              value={shortUrl || currentUrl}
+              value={shortUrl || window.location.href}
               readOnly
               className='flex-1 px-3 py-2 border border-gray-300 rounded-md text-xs sm:text-sm bg-gray-50 text-gray-500 break-all'
             />
@@ -261,10 +285,10 @@ function SharedContent() {
   );
 }
 
-export default function SharedPage() {
+export default function ShortUrlPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <SharedContent />
+      <ShortUrlContent />
     </Suspense>
   );
 }

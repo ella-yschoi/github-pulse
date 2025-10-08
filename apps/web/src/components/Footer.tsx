@@ -34,7 +34,7 @@ export default function Footer() {
               <FaGithub className='h-4 w-4 sm:h-5 sm:w-5 text-gray-600' />
               <span className='text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition-colors'>
                 <span className='hidden sm:inline'>github-pulse</span>
-                <span className='sm:hidden'>ella-yschoi</span>
+                <span className='sm:hidden'>github-pulse</span>
               </span>
             </Link>
           </div>
