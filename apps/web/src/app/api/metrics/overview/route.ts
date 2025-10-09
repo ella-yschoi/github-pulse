@@ -75,8 +75,9 @@ export async function GET() {
       console.log('Returning data from cache:', cacheKey);
       return NextResponse.json(cachedData, {
         headers: {
-          'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'private, no-cache, no-store, must-revalidate',
           'X-Cache': 'HIT',
+          'X-User': username,
         },
       });
     }
@@ -104,8 +105,9 @@ export async function GET() {
 
       return NextResponse.json(mockData, {
         headers: {
-          'Cache-Control': 's-maxage=60, stale-while-revalidate=300',
+          'Cache-Control': 'private, no-cache, no-store, must-revalidate',
           'X-Cache': 'MOCK',
+          'X-User': username,
         },
       });
     }
@@ -350,8 +352,9 @@ export async function GET() {
 
     return NextResponse.json(responseData, {
       headers: {
-        'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
         'X-Cache': 'MISS',
+        'X-User': username,
       },
     });
   } catch (error) {

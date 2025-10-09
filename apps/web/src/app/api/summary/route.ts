@@ -267,7 +267,13 @@ export async function GET(request: NextRequest) {
     const cached = cache.get<ActivitySummary>(cacheKey);
 
     if (cached) {
-      return NextResponse.json(cached);
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+          'X-Cache': 'HIT',
+          'X-User': session.user.username || 'anonymous',
+        },
+      });
     }
 
     // Fetch repository activities
@@ -309,7 +315,13 @@ export async function GET(request: NextRequest) {
     // Cache the response
     cache.set(cacheKey, response, CACHE_TTL.MEDIUM);
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+        'X-Cache': 'MISS',
+        'X-User': session.user.username || 'anonymous',
+      },
+    });
   } catch (error) {
     console.error('Activity Summary by AI API error:', error);
 
