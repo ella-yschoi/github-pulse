@@ -59,10 +59,17 @@ export async function GET() {
     }
 
     const accessToken = session.accessToken as string;
-    const userId = session.user?.email || 'unknown';
+    const username = session.user?.username || 'unknown';
+
+    // Log session info for debugging
+    console.log('Session info:', {
+      username: session.user?.username,
+      email: session.user?.email,
+      name: session.user?.name,
+    });
 
     // Check cache (use longer TTL)
-    const cacheKey = createGitHubCacheKey(userId, 'overview');
+    const cacheKey = createGitHubCacheKey(username, 'overview');
     const cachedData = cache.get<OverviewResponse>(cacheKey);
     if (cachedData) {
       console.log('Returning data from cache:', cacheKey);
@@ -75,7 +82,9 @@ export async function GET() {
     }
 
     // 1. Get user repository list
-    console.log('Starting user repository list query...');
+    console.log(
+      `Starting user repository list query for username: ${username}...`
+    );
 
     // Temporary: Use mock data when GitHub Personal Access Token is not available
     if (!accessToken || accessToken === 'undefined') {
@@ -106,7 +115,9 @@ export async function GET() {
       '/user/repos?per_page=100&type=owner&sort=updated'
     );
     console.log(
-      `Found ${Array.isArray(repos) ? repos.length : 0} repositories in total`
+      `Found ${
+        Array.isArray(repos) ? repos.length : 0
+      } repositories for user: ${username}`
     );
 
     if (!Array.isArray(repos)) {
@@ -333,7 +344,9 @@ export async function GET() {
 
     // 9. Save to cache (use longer TTL)
     cache.set(cacheKey, responseData, CACHE_TTL.VERY_LONG);
-    console.log('Data cached:', cacheKey, 'TTL:', CACHE_TTL.VERY_LONG);
+    console.log(
+      `Data cached for user: ${username}, key: ${cacheKey}, TTL: ${CACHE_TTL.VERY_LONG}`
+    );
 
     return NextResponse.json(responseData, {
       headers: {

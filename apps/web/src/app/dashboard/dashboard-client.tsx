@@ -397,6 +397,15 @@ export default function DashboardClient() {
             username={session.user.username || ''}
           />
         )}
+
+        {/* Debug info - remove in production */}
+        {process.env.NODE_ENV === 'development' && session?.user && (
+          <div className='fixed bottom-4 right-4 bg-gray-800 text-white p-2 rounded text-xs'>
+            <div>Username: {session.user.username || 'undefined'}</div>
+            <div>Email: {session.user.email || 'undefined'}</div>
+            <div>Name: {session.user.name || 'undefined'}</div>
+          </div>
+        )}
       </div>
     </div>
   );

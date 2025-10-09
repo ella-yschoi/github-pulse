@@ -44,6 +44,8 @@ export default function ReportModal({
   const handleGenerateReport = async () => {
     setIsGenerating(true);
     try {
+      console.log('Generating report for username:', username);
+
       const response = await fetch('/api/reports/' + reportType, {
         method: 'POST',
         headers: {
@@ -58,11 +60,13 @@ export default function ReportModal({
 
       if (data.success) {
         setGeneratedReport(data);
+        console.log('Report generated successfully for:', username);
       } else {
+        console.error('Failed to generate report for:', username);
         alert('Failed to generate report.');
       }
     } catch (error) {
-      console.error('Error generating report:', error);
+      console.error('Error generating report for username:', username, error);
       alert('An error occurred while generating the report.');
     } finally {
       setIsGenerating(false);
@@ -74,6 +78,8 @@ export default function ReportModal({
 
     setIsDownloading(true);
     try {
+      console.log('Downloading report for username:', username);
+
       const params = new URLSearchParams({
         type: reportType,
         username,
@@ -93,11 +99,13 @@ export default function ReportModal({
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        console.log('Report downloaded successfully for:', username);
       } else {
+        console.error('Download failed for username:', username);
         alert('Download failed.');
       }
     } catch (error) {
-      console.error('Error downloading report:', error);
+      console.error('Error downloading report for username:', username, error);
       alert('An error occurred during download.');
     } finally {
       setIsDownloading(false);

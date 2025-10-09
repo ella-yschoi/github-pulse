@@ -31,6 +31,11 @@ export class ReportController {
         });
       }
 
+      // Log the request for debugging
+      console.log(
+        `Generating weekly report for username: ${username}, start_date: ${start_date}`
+      );
+
       console.log(`Generating weekly report for ${username}...`);
       const report = await this.reportService.generateWeeklyReport(
         username,
@@ -89,6 +94,11 @@ export class ReportController {
       const { reportId } = req.params;
       const { type, username, start_date } = req.query;
 
+      // Log the request for debugging
+      console.log(
+        `Download request - reportId: ${reportId}, type: ${type}, username: ${username}, start_date: ${start_date}`
+      );
+
       if (type !== 'weekly') {
         return res.status(400).json({
           error: 'Bad Request',
@@ -96,10 +106,20 @@ export class ReportController {
         });
       }
 
+      if (!username) {
+        return res.status(400).json({
+          error: 'Bad Request',
+          message: 'Username is required for download',
+        });
+      }
+
       let report;
       let pdfPath = null as string | null;
       let pdfBuffer = null as Buffer | null;
 
+      console.log(
+        `Generating report for download - username: ${username}, start_date: ${start_date}`
+      );
       report = await this.reportService.generateWeeklyReport(
         username as string,
         start_date as string
