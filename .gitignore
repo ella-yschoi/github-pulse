@@ -53,3 +53,7 @@ apps/backend/*.log
 
 # OS
 Thumbs.db
+
+# Claude
+CLAUDE.md
+convention.md
