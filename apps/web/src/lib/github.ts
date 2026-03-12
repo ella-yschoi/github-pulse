@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 interface GitHubError {
   message: string;
   documentation_url?: string;
@@ -79,9 +81,7 @@ export async function gh(
     // Only perform warning/blocking logic when headers exist
     if (rateLimit) {
       if (rateLimit.remaining <= 10) {
-        console.warn(
-          `GitHub API rate limit warning: ${rateLimit.remaining}/${rateLimit.limit} remaining`
-        );
+        logger.warn(`GitHub API rate limit warning: ${rateLimit.remaining}/${rateLimit.limit} remaining`);
       }
 
       if (rateLimit.remaining === 0) {
@@ -118,11 +118,7 @@ export async function gh(
       // Rate limit error and retryable case
       if (error instanceof RateLimitError && retryCount < 2) {
         const backoffTime = getBackoffTime(error.rateLimit!);
-        console.warn(
-          `Backoff due to rate limit error: ${backoffTime}ms before retry (${
-            retryCount + 1
-          }/2)`
-        );
+        logger.warn(`Rate limit backoff: ${backoffTime}ms (retry ${retryCount + 1}/2)`);
 
         await new Promise((resolve) => setTimeout(resolve, backoffTime));
         return gh(accessToken, path, init, retryCount + 1);

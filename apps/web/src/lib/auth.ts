@@ -1,5 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import GitHubProvider from 'next-auth/providers/github';
+import { logger } from '@/lib/logger';
 
 // Session type extension
 declare module 'next-auth' {
@@ -89,7 +90,7 @@ export const authOptions: NextAuthOptions = {
             token.username = userData.login;
           }
         } catch (error) {
-          console.error('JWT - Error fetching GitHub user data:', error);
+          logger.error('JWT - Error fetching GitHub user data:', error);
         }
       }
 
