@@ -1,6 +1,6 @@
 import { GitHubService } from './githubService';
 import { WeeklyReport } from '../types';
-import moment from 'moment';
+import { startOfWeek, endOfWeek, subWeeks, isWithinInterval, format, parseISO } from 'date-fns';
 
 export class ReportService {
   private githubService: GitHubService;
@@ -15,9 +15,9 @@ export class ReportService {
   ): Promise<WeeklyReport> {
     try {
       const start = startDate
-        ? moment(startDate)
-        : moment().subtract(1, 'week').startOf('week');
-      const end = moment(start).endOf('week');
+        ? startOfWeek(parseISO(startDate))
+        : startOfWeek(subWeeks(new Date(), 1));
+      const end = endOfWeek(start);
 
       const repos = await this.githubService.getUserRepos(username);
 
@@ -42,7 +42,7 @@ export class ReportService {
             views: stats.views,
             visitors: stats.visitors,
           });
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.log(`Skipping repo ${repo.full_name} due to error:`, error);
           // Continue processing
         }
@@ -53,17 +53,17 @@ export class ReportService {
 
       // Count new and updated repos in the week
       const newRepos = repos.filter((repo) =>
-        moment(repo.created_at).isBetween(start, end, 'day', '[]')
+        isWithinInterval(parseISO(repo.created_at), { start, end })
       ).length;
 
       const updatedRepos = repos.filter((repo) =>
-        moment(repo.updated_at).isBetween(start, end, 'day', '[]')
+        isWithinInterval(parseISO(repo.updated_at), { start, end })
       ).length;
 
       return {
         username,
-        week_start: start.format('YYYY-MM-DD'),
-        week_end: end.format('YYYY-MM-DD'),
+        week_start: format(start, 'yyyy-MM-dd'),
+        week_end: format(end, 'yyyy-MM-dd'),
         total_stars: totalStars,
         total_views: totalViews,
         total_visitors: totalVisitors,
@@ -71,9 +71,9 @@ export class ReportService {
         new_repos: newRepos,
         updated_repos: updatedRepos,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error generating weekly report:', error);
-      throw new Error(`Failed to generate weekly report: ${error.message}`);
+      throw new Error(`Failed to generate weekly report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

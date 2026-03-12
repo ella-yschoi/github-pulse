@@ -48,10 +48,10 @@ export class ReportController {
         // Generate PDF (optional)
         pdfPath = await this.pdfService.generateWeeklyReportPDF(report);
         console.log(`PDF generated: ${pdfPath}`);
-      } catch (pdfError: any) {
+      } catch (pdfError: unknown) {
         console.warn(
           'PDF generation failed, continuing with JSON response:',
-          pdfError.message
+          pdfError instanceof Error ? pdfError.message : 'Unknown error'
         );
       }
 
@@ -113,31 +113,30 @@ export class ReportController {
         });
       }
 
-      let report;
       let pdfPath = null as string | null;
       let pdfBuffer = null as Buffer | null;
 
       console.log(
         `Generating report for download - username: ${username}, start_date: ${start_date}`
       );
-      report = await this.reportService.generateWeeklyReport(
+      const report = await this.reportService.generateWeeklyReport(
         username as string,
         start_date as string
       );
       // Try memory buffer-based streaming first (for serverless/limited filesystem environments)
       try {
         pdfBuffer = await this.pdfService.generateWeeklyReportPDFBuffer(report);
-      } catch (bufferErr: any) {
+      } catch (bufferErr: unknown) {
         console.warn(
           'PDF buffer generation failed, fallback to file path:',
-          bufferErr.message
+          bufferErr instanceof Error ? bufferErr.message : 'Unknown error'
         );
         try {
           pdfPath = await this.pdfService.generateWeeklyReportPDF(report);
-        } catch (pdfError: any) {
+        } catch (pdfError: unknown) {
           console.warn(
             'PDF file generation failed for download:',
-            pdfError.message
+            pdfError instanceof Error ? pdfError.message : 'Unknown error'
           );
         }
       }

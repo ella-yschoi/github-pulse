@@ -97,9 +97,9 @@ export class GitHubService {
         clones: clones.count,
         clone_uniques: clones.uniques,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 403 Forbidden or 404 Not Found means no permission or inaccessible repository
-      if (error.response?.status === 403 || error.response?.status === 404) {
+      if (axios.isAxiosError(error) && (error.response?.status === 403 || error.response?.status === 404)) {
         console.log(`Skipping ${owner}/${repo} - no access or not found`);
         return {
           views: 0,
