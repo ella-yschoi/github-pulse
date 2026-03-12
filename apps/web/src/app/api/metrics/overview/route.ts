@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { gh, isRateLimitError, isGitHubAPIError } from '@/lib/github';
 import { cache, createGitHubCacheKey, CACHE_TTL } from '@/lib/cache';
 import { makeBrandCopy } from '@/lib/brandCopy';
+import { logger } from '@/lib/logger';
+import type { OverviewResponse } from '@/types/api';
 
 // Type definitions
 interface GitHubRepo {
@@ -29,27 +31,168 @@ interface TrafficViews {
   }>;
 }
 
-interface OverviewResponse {
-  range: '14d';
-  totals: {
-    stars_total: number;
-    views_14d: number;
-    unique_14d: number;
-    repos_count: number;
-  };
-  timeseries: { date: string; views: number; unique: number }[];
-  top_repos: {
-    full_name: string;
-    stars: number;
-    views_14d: number;
-    sparkline_data: { date: string; views: number }[];
-  }[];
-  brand_copy: string;
+interface TrafficResult {
+  repo: GitHubRepo;
+  traffic: TrafficViews;
 }
+
+// --- Helper functions ---
+
+/** Fill missing dates in a 14-day window with default values */
+function fillTimeseriesGaps<T extends Record<string, unknown>>(
+  data: { date: string }[],
+  defaults: Omit<T, 'date'>
+): (T & { date: string })[] {
+  const today = new Date();
+  const result: (T & { date: string })[] = [];
+
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const existing = data.find((item) => item.date === dateStr);
+    result.push({ date: dateStr, ...defaults, ...existing } as T & { date: string });
+  }
+
+  return result;
+}
+
+/** Fetch user repositories with push permission, sorted by stars */
+async function fetchUserRepos(accessToken: string): Promise<GitHubRepo[]> {
+  const repos = await gh(
+    accessToken,
+    '/user/repos?per_page=100&type=owner&sort=updated'
+  );
+
+  if (!Array.isArray(repos)) {
+    throw new Error('Unable to fetch repository data.');
+  }
+
+  return repos;
+}
+
+/** Batch-fetch traffic data for top repos (max 5, 2 at a time) */
+async function fetchTrafficData(
+  accessToken: string,
+  repos: GitHubRepo[]
+): Promise<TrafficResult[]> {
+  const emptyTraffic: TrafficViews = { count: 0, uniques: 0, views: [] };
+
+  const trafficPromises = repos.slice(0, 5).map(async (repo): Promise<TrafficResult> => {
+    try {
+      const traffic = await gh(
+        accessToken,
+        `/repos/${repo.full_name}/traffic/views?per=day`
+      );
+      return { repo, traffic: traffic as TrafficViews };
+    } catch (error) {
+      if (isGitHubAPIError(error) && (error.status === 403 || error.status === 404)) {
+        logger.warn(`Traffic API not accessible: ${repo.full_name} (${error.status})`);
+        return { repo, traffic: emptyTraffic };
+      }
+      if (isRateLimitError(error)) throw error;
+      logger.warn(`Traffic API error: ${repo.full_name}`, error);
+      return { repo, traffic: emptyTraffic };
+    }
+  });
+
+  // Process in batches of 2
+  const results: TrafficResult[] = [];
+  const batchSize = 2;
+
+  for (let i = 0; i < trafficPromises.length; i += batchSize) {
+    const batch = trafficPromises.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(batch);
+
+    for (const r of batchResults) {
+      if (r.status === 'fulfilled') results.push(r.value);
+    }
+
+    if (i + batchSize < trafficPromises.length) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+
+  return results;
+}
+
+/** Aggregate traffic results into totals, timeseries, and per-repo stats */
+function aggregateMetrics(
+  allRepos: GitHubRepo[],
+  trafficResults: TrafficResult[]
+) {
+  let totalStars = 0;
+  let totalViews14d = 0;
+  let totalUnique14d = 0;
+  const timeseriesMap = new Map<string, { views: number; unique: number }>();
+
+  // Sum stars from all repos
+  for (const repo of allRepos) {
+    totalStars += repo.stargazers_count;
+  }
+
+  const topReposWithTraffic: OverviewResponse['top_repos'] = [];
+
+  for (const { repo, traffic } of trafficResults) {
+    const views14d = traffic.views.reduce((s, v) => s + v.count, 0);
+    const unique14d = traffic.views.reduce((s, v) => s + v.uniques, 0);
+    totalViews14d += views14d;
+    totalUnique14d += unique14d;
+
+    // Build sparkline with gap-filling
+    const sparklineRaw = traffic.views.map((v) => ({
+      date: new Date(v.timestamp).toISOString().split('T')[0],
+      views: v.count,
+    }));
+    const sparkline_data = fillTimeseriesGaps<{ date: string; views: number }>(
+      sparklineRaw,
+      { views: 0 }
+    );
+
+    topReposWithTraffic.push({
+      full_name: repo.full_name,
+      stars: repo.stargazers_count,
+      views_14d: views14d,
+      sparkline_data,
+    });
+
+    // Merge into global timeseries
+    for (const view of traffic.views) {
+      const date = new Date(view.timestamp).toISOString().split('T')[0];
+      const existing = timeseriesMap.get(date) || { views: 0, unique: 0 };
+      timeseriesMap.set(date, {
+        views: existing.views + view.count,
+        unique: existing.unique + view.uniques,
+      });
+    }
+  }
+
+  // Sort timeseries and fill gaps
+  const rawTimeseries = Array.from(timeseriesMap.entries())
+    .map(([date, data]) => ({ date, views: data.views, unique: data.unique }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const timeseries = fillTimeseriesGaps<{ date: string; views: number; unique: number }>(
+    rawTimeseries,
+    { views: 0, unique: 0 }
+  );
+
+  // Sort top repos by views
+  topReposWithTraffic.sort((a, b) => b.views_14d - a.views_14d);
+
+  return {
+    totalStars,
+    totalViews14d,
+    totalUnique14d,
+    timeseries,
+    topReposWithTraffic: topReposWithTraffic.slice(0, 5),
+  };
+}
+
+// --- Route handler ---
 
 export async function GET() {
   try {
-    // Check session
     const session = await getServerSession(authOptions);
     if (!session?.accessToken) {
       return NextResponse.json(
@@ -61,18 +204,11 @@ export async function GET() {
     const accessToken = session.accessToken as string;
     const username = session.user?.username || 'unknown';
 
-    // Log session info for debugging
-    console.log('Session info:', {
-      username: session.user?.username,
-      email: session.user?.email,
-      name: session.user?.name,
-    });
-
-    // Check cache (use longer TTL)
+    // Check cache
     const cacheKey = createGitHubCacheKey(username, 'overview');
     const cachedData = cache.get<OverviewResponse>(cacheKey);
     if (cachedData) {
-      console.log('Returning data from cache:', cacheKey);
+      logger.debug('Cache HIT:', cacheKey);
       return NextResponse.json(cachedData, {
         headers: {
           'Cache-Control': 'private, no-cache, no-store, must-revalidate',
@@ -82,273 +218,47 @@ export async function GET() {
       });
     }
 
-    // 1. Get user repository list
-    console.log(
-      `Starting user repository list query for username: ${username}...`
-    );
+    // 1. Fetch repos
+    const repos = await fetchUserRepos(accessToken);
+    logger.debug(`Found ${repos.length} repos`);
 
-    // Temporary: Use mock data when GitHub Personal Access Token is not available
-    if (!accessToken || accessToken === 'undefined') {
-      console.warn('GitHub Personal Access Token is not set. Using mock data');
-      const mockData: OverviewResponse = {
-        range: '14d',
-        totals: {
-          stars_total: 0,
-          views_14d: 0,
-          unique_14d: 0,
-          repos_count: 0,
-        },
-        timeseries: [],
-        top_repos: [],
-        brand_copy: 'Please set up GitHub Personal Access Token',
-      };
-
-      return NextResponse.json(mockData, {
-        headers: {
-          'Cache-Control': 'private, no-cache, no-store, must-revalidate',
-          'X-Cache': 'MOCK',
-          'X-User': username,
-        },
-      });
-    }
-
-    const repos = await gh(
-      accessToken,
-      '/user/repos?per_page=100&type=owner&sort=updated'
-    );
-    console.log(
-      `Found ${
-        Array.isArray(repos) ? repos.length : 0
-      } repositories for user: ${username}`
-    );
-
-    if (!Array.isArray(repos)) {
-      throw new Error('Unable to fetch repository data.');
-    }
-
-    // 2. Select top repositories (TOP 10 by stars)
+    // 2. Select top repos by stars (push permission only)
     const topRepos = repos
-      .filter((repo: GitHubRepo) => repo.permissions.push) // Only repos with push permission
-      .sort(
-        (a: GitHubRepo, b: GitHubRepo) =>
-          b.stargazers_count - a.stargazers_count
-      )
+      .filter((repo) => repo.permissions.push)
+      .sort((a, b) => b.stargazers_count - a.stargazers_count)
       .slice(0, 10);
 
-    // 3. Parallel traffic data query (limit to max 5 for API call optimization)
-    const limitedTopRepos = topRepos.slice(0, 5);
-    console.log(
-      `Starting traffic data query: ${limitedTopRepos.length} repositories`
-    );
+    // 3. Fetch traffic data
+    const trafficResults = await fetchTrafficData(accessToken, topRepos);
 
-    const trafficPromises = limitedTopRepos.map(async (repo: GitHubRepo) => {
-      try {
-        const traffic = await gh(
-          accessToken,
-          `/repos/${repo.full_name}/traffic/views?per=day`
-        );
-        return {
-          repo,
-          traffic: traffic as TrafficViews,
-        };
-      } catch (error) {
-        // Return empty data when Traffic API is not accessible
-        if (
-          isGitHubAPIError(error) &&
-          (error.status === 403 || error.status === 404)
-        ) {
-          console.warn(
-            `Traffic API not accessible: ${repo.full_name} (${error.status})`
-          );
-          return {
-            repo,
-            traffic: {
-              count: 0,
-              uniques: 0,
-              views: [],
-            } as TrafficViews,
-          };
-        }
-        // Propagate rate limit errors to upper level
-        if (isRateLimitError(error)) {
-          throw error;
-        }
-        // Handle other errors with empty data
-        console.warn(`Traffic API error: ${repo.full_name}`, error);
-        return {
-          repo,
-          traffic: {
-            count: 0,
-            uniques: 0,
-            views: [],
-          } as TrafficViews,
-        };
-      }
-    });
+    // 4. Aggregate metrics
+    const metrics = aggregateMetrics(repos, trafficResults);
 
-    // Process API calls in batches (2 at a time)
-    const trafficResults = [];
-    const batchSize = 2;
-
-    console.log(
-      `Starting batch processing: ${trafficPromises.length} requests in batches of ${batchSize}`
-    );
-
-    for (let i = 0; i < trafficPromises.length; i += batchSize) {
-      const batch = trafficPromises.slice(i, i + batchSize);
-      console.log(
-        `Processing batch ${Math.floor(i / batchSize) + 1}... (${
-          i + 1
-        }-${Math.min(i + batchSize, trafficPromises.length)})`
-      );
-
-      const batchResults = await Promise.allSettled(batch);
-      trafficResults.push(...batchResults);
-
-      // Delay between batches (reduce API call load)
-      if (i + batchSize < trafficPromises.length) {
-        console.log('100ms delay between batches...');
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-    }
-
-    console.log('Traffic data query completed');
-
-    // 4. Data aggregation
-    let totalStars = 0;
-    let totalViews14d = 0;
-    let totalUnique14d = 0;
-    const timeseriesMap = new Map<string, { views: number; unique: number }>();
-    const topReposWithTraffic: {
-      full_name: string;
-      stars: number;
-      views_14d: number;
-      sparkline_data: { date: string; views: number }[];
-    }[] = [];
-
-    // Sum of stars from all repositories
-    repos.forEach((repo: GitHubRepo) => {
-      totalStars += repo.stargazers_count;
-    });
-
-    // Process repositories with traffic data
-    trafficResults.forEach((result) => {
-      if (result.status === 'fulfilled') {
-        const { repo, traffic } = result.value;
-
-        // Sum of views over 14 days
-        const views14d = traffic.views.reduce(
-          (sum, view) => sum + view.count,
-          0
-        );
-        const unique14d = traffic.views.reduce(
-          (sum, view) => sum + view.uniques,
-          0
-        );
-
-        totalViews14d += views14d;
-        totalUnique14d += unique14d;
-
-        // Generate sparkline data (14-day views data)
-        const sparklineData = traffic.views.map((view) => ({
-          date: new Date(view.timestamp).toISOString().split('T')[0],
-          views: view.count,
-        }));
-
-        // Ensure 14-day data (fill missing dates with 0)
-        const last14DaysSparkline = [];
-        const today = new Date();
-
-        for (let i = 13; i >= 0; i--) {
-          const date = new Date(today);
-          date.setDate(date.getDate() - i);
-          const dateStr = date.toISOString().split('T')[0];
-
-          const existingData = sparklineData.find(
-            (item) => item.date === dateStr
-          );
-          last14DaysSparkline.push({
-            date: dateStr,
-            views: existingData?.views || 0,
-          });
-        }
-
-        // Add to top repositories list
-        topReposWithTraffic.push({
-          full_name: repo.full_name,
-          stars: repo.stargazers_count,
-          views_14d: views14d,
-          sparkline_data: last14DaysSparkline,
-        });
-
-        // Merge timeseries data
-        traffic.views.forEach((view) => {
-          const date = new Date(view.timestamp).toISOString().split('T')[0];
-          const existing = timeseriesMap.get(date) || { views: 0, unique: 0 };
-          timeseriesMap.set(date, {
-            views: existing.views + view.count,
-            unique: existing.unique + view.uniques,
-          });
-        });
-      }
-    });
-
-    // 5. Sort and format timeseries data
-    const timeseries = Array.from(timeseriesMap.entries())
-      .map(([date, data]) => ({
-        date,
-        views: data.views,
-        unique: data.unique,
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-
-    // 6. Ensure 14-day data (fill missing dates with 0)
-    const last14Days = [];
-    const today = new Date();
-
-    for (let i = 13; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-
-      const existingData = timeseries.find((item) => item.date === dateStr);
-      last14Days.push({
-        date: dateStr,
-        views: existingData?.views || 0,
-        unique: existingData?.unique || 0,
-      });
-    }
-
-    // 7. Sort top repositories (by views)
-    topReposWithTraffic.sort((a, b) => b.views_14d - a.views_14d);
-
-    // 8. Generate branding copy
-    const topRepoName = topReposWithTraffic[0]?.full_name || 'No repositories';
+    // 5. Generate branding copy
+    const topRepoName = metrics.topReposWithTraffic[0]?.full_name || 'No repositories';
     const brandCopy = makeBrandCopy({
-      starsTotal: totalStars,
-      views14d: totalViews14d,
+      starsTotal: metrics.totalStars,
+      views14d: metrics.totalViews14d,
       topRepoName,
     });
 
-    // 8. Compose response data
+    // 6. Compose response
     const responseData: OverviewResponse = {
       range: '14d',
       totals: {
-        stars_total: totalStars,
-        views_14d: totalViews14d,
-        unique_14d: totalUnique14d,
+        stars_total: metrics.totalStars,
+        views_14d: metrics.totalViews14d,
+        unique_14d: metrics.totalUnique14d,
         repos_count: repos.length,
       },
-      timeseries: last14Days,
-      top_repos: topReposWithTraffic.slice(0, 5), // Top 5 only
+      timeseries: metrics.timeseries,
+      top_repos: metrics.topReposWithTraffic,
       brand_copy: brandCopy,
     };
 
-    // 9. Save to cache (use longer TTL)
+    // 7. Cache and return
     cache.set(cacheKey, responseData, CACHE_TTL.VERY_LONG);
-    console.log(
-      `Data cached for user: ${username}, key: ${cacheKey}, TTL: ${CACHE_TTL.VERY_LONG}`
-    );
+    logger.debug(`Cached: ${cacheKey}`);
 
     return NextResponse.json(responseData, {
       headers: {
@@ -358,19 +268,12 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Overview API Error:', error);
+    logger.error('Overview API Error:', error);
 
     if (isRateLimitError(error)) {
       const retryAfter = Math.ceil(
         (error.rateLimit?.reset || 0) - Date.now() / 1000
       );
-      console.error('GitHub API rate limit error:', {
-        remaining: error.rateLimit?.remaining,
-        limit: error.rateLimit?.limit,
-        reset: error.rateLimit?.reset,
-        retryAfter,
-      });
-
       return NextResponse.json(
         {
           error: 'GitHub API rate limit reached. Please try again later.',
@@ -385,9 +288,7 @@ export async function GET() {
           status: 429,
           headers: {
             'Retry-After': retryAfter.toString(),
-            'X-RateLimit-Remaining': (
-              error.rateLimit?.remaining || 0
-            ).toString(),
+            'X-RateLimit-Remaining': (error.rateLimit?.remaining || 0).toString(),
             'X-RateLimit-Limit': (error.rateLimit?.limit || 0).toString(),
             'X-RateLimit-Reset': (error.rateLimit?.reset || 0).toString(),
           },

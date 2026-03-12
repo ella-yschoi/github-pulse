@@ -79,6 +79,9 @@ class MemoryCache {
 // Global cache instance
 export const cache = new MemoryCache();
 
+// Periodic cleanup of expired entries (every 10 minutes)
+setInterval(() => cache.cleanup(), 10 * 60 * 1000);
+
 /**
  * Cache key generation helper
  */
