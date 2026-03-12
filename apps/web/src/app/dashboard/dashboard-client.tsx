@@ -8,25 +8,7 @@ import { TopReposTable } from '@/components/TopReposTable';
 import { AiSummaryCard } from '@/components/AiSummaryCard';
 import ShareModal from '@/components/ShareModal';
 import ReportModal from '@/components/ReportModal';
-
-// API response type definition
-interface OverviewData {
-  range: '14d';
-  totals: {
-    stars_total: number;
-    views_14d: number;
-    unique_14d: number;
-    repos_count: number;
-  };
-  timeseries: { date: string; views: number; unique: number }[];
-  top_repos: {
-    full_name: string;
-    stars: number;
-    views_14d: number;
-    sparkline_data: { date: string; views: number }[];
-  }[];
-  brand_copy: string;
-}
+import type { OverviewResponse } from '@/types/api';
 
 export default function DashboardClient() {
   const { data: session } = useSession();
@@ -41,7 +23,7 @@ export default function DashboardClient() {
       if (!response.ok) {
         throw new Error('Failed to fetch overview data');
       }
-      return response.json() as Promise<OverviewData>;
+      return response.json() as Promise<OverviewResponse>;
     },
     retry: (failureCount, error) => {
       // Do not retry on rate limit error
@@ -350,10 +332,10 @@ export default function DashboardClient() {
         </div>
 
         {/* Activity Summary by AI Card */}
-        {overviewData.top_repos?.[0]?.full_name && (
+        {overviewData.top_repos?.length > 0 && (
           <div className='mb-6 sm:mb-8'>
             <AiSummaryCard
-              repo={overviewData.top_repos[0].full_name}
+              repos={overviewData.top_repos.map((r) => r.full_name)}
               period='14d'
             />
           </div>

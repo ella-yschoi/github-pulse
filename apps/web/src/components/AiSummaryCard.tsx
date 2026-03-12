@@ -2,25 +2,17 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-
-// Types for AI Summary API response
-interface ActivitySummary {
-  summary: string;
-  stats: {
-    issues: number;
-    pulls: number;
-    commits: number;
-  };
-  timeframe: string;
-}
+import type { ActivitySummary } from '@/types/api';
 
 interface AiSummaryCardProps {
-  repo: string;
+  repos: string[];
   period?: string;
 }
 
-export function AiSummaryCard({ repo, period = '7d' }: AiSummaryCardProps) {
+export function AiSummaryCard({ repos, period = '14d' }: AiSummaryCardProps) {
   const [retryCount, setRetryCount] = useState(0);
+
+  const reposParam = repos.join(',');
 
   // Fetch AI summary data
   const {
@@ -29,10 +21,10 @@ export function AiSummaryCard({ repo, period = '7d' }: AiSummaryCardProps) {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ['ai-summary', repo, period],
+    queryKey: ['ai-summary', reposParam, period],
     queryFn: async () => {
       const response = await fetch(
-        `/api/summary?repo=${encodeURIComponent(repo)}&period=${period}`
+        `/api/summary?repos=${encodeURIComponent(reposParam)}&period=${period}`
       );
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

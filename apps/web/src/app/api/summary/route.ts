@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { gh, GitHubAPIError, RateLimitError } from '@/lib/github';
 import { cache, createCacheKey, CACHE_TTL } from '@/lib/cache';
 import OpenAI from 'openai';
+import { logger } from '@/lib/logger';
+import type { ActivitySummary } from '@/types/api';
 
 // Types for GitHub API responses
 interface GitHubIssue {
@@ -45,20 +47,10 @@ interface GitHubCommit {
   } | null;
 }
 
-interface ActivitySummary {
-  summary: string;
-  stats: {
-    issues: number;
-    pulls: number;
-    commits: number;
-  };
-  timeframe: string;
+// Lazy OpenAI client (avoid build-time error when env var is missing)
+function getOpenAIClient() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 /**
  * Fetch recent repository activities from GitHub API
@@ -136,13 +128,51 @@ async function fetchRepositoryActivities(
 }
 
 /**
+ * Fetch activities across multiple repositories and aggregate
+ */
+async function fetchMultiRepoActivities(
+  accessToken: string,
+  repos: { owner: string; repo: string }[],
+  days: number
+): Promise<{
+  issues: GitHubIssue[];
+  pulls: GitHubPullRequest[];
+  commits: GitHubCommit[];
+}> {
+  const allIssues: GitHubIssue[] = [];
+  const allPulls: GitHubPullRequest[] = [];
+  const allCommits: GitHubCommit[] = [];
+
+  // Fetch 2 repos at a time to avoid rate limiting
+  const batchSize = 2;
+  for (let i = 0; i < repos.length; i += batchSize) {
+    const batch = repos.slice(i, i + batchSize);
+    const results = await Promise.allSettled(
+      batch.map((r) =>
+        fetchRepositoryActivities(accessToken, r.owner, r.repo, days)
+      )
+    );
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        allIssues.push(...result.value.issues);
+        allPulls.push(...result.value.pulls);
+        allCommits.push(...result.value.commits);
+      }
+    }
+  }
+
+  return { issues: allIssues, pulls: allPulls, commits: allCommits };
+}
+
+/**
  * Generate AI summary using OpenAI
  */
 async function generateAISummary(
   issues: GitHubIssue[],
   pulls: GitHubPullRequest[],
   commits: GitHubCommit[],
-  repoName: string,
+  repoNames: string[],
   timeframe: string
 ): Promise<string> {
   // Prepare input text for AI
@@ -167,22 +197,23 @@ async function generateAISummary(
   });
 
   const inputText = activities.join('\n');
+  const repoList = repoNames.join(', ');
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAIClient().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
           content:
-            'You are an expert assistant that summarizes GitHub repository activities. You will only receive activities that were created, merged, or committed within the specified timeframe. Provide concise, professional summaries in English that highlight key changes, new features, bug fixes, and overall progress. Do not make assumptions about activities outside the provided timeframe.',
+            'You are an expert assistant that summarizes GitHub account-wide activities. You will only receive activities that were created, merged, or committed within the specified timeframe across multiple repositories. Provide concise, professional summaries in English that highlight key changes, new features, bug fixes, and overall progress. Do not make assumptions about activities outside the provided timeframe.',
         },
         {
           role: 'user',
-          content: `Summarize the GitHub repository activities for "${repoName}" that occurred within the last ${timeframe}. The following activities are all from this specific timeframe:\n\n${inputText}\n\nProvide a brief summary in 2-3 sentences highlighting the main activities and changes that happened during this ${timeframe} period.`,
+          content: `Summarize the GitHub account activities across repositories (${repoList}) that occurred within the last ${timeframe}. The following activities are all from this specific timeframe:\n\n${inputText}\n\nProvide a brief summary in 2-3 sentences highlighting the main activities and changes across the account during this ${timeframe} period.`,
         },
       ],
-      max_tokens: 200,
+      max_tokens: 250,
       temperature: 0.3,
     });
 
@@ -190,7 +221,7 @@ async function generateAISummary(
       completion.choices[0]?.message?.content || 'Unable to generate summary'
     );
   } catch (error) {
-    console.error('OpenAI API error:', error);
+    logger.error('OpenAI API error:', error);
     throw new Error('Failed to generate AI summary');
   }
 }
@@ -212,7 +243,7 @@ function validateRepoParam(
 
 /**
  * GET /api/summary
- * Generate activity summary by AI of repository activities
+ * Generate account-wide activity summary by AI across repositories
  */
 export async function GET(request: NextRequest) {
   try {
@@ -227,21 +258,34 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
-    const repo = searchParams.get('repo');
-    const period = searchParams.get('period') || '7d';
+    const reposParam = searchParams.get('repos');
+    const period = searchParams.get('period') || '14d';
 
     // Validate parameters
-    if (!repo) {
+    if (!reposParam) {
       return NextResponse.json(
-        { error: 'Repository parameter is required' },
+        { error: 'repos parameter is required (comma-separated owner/repo)' },
         { status: 400 }
       );
     }
 
-    const repoInfo = validateRepoParam(repo);
-    if (!repoInfo) {
+    const repoNames = reposParam.split(',').filter(Boolean).slice(0, 5);
+    const repoInfos: { owner: string; repo: string }[] = [];
+
+    for (const name of repoNames) {
+      const info = validateRepoParam(name.trim());
+      if (!info) {
+        return NextResponse.json(
+          { error: `Invalid repository format: "${name}". Use "owner/repo"` },
+          { status: 400 }
+        );
+      }
+      repoInfos.push(info);
+    }
+
+    if (repoInfos.length === 0) {
       return NextResponse.json(
-        { error: 'Invalid repository format. Use "owner/repo"' },
+        { error: 'At least one valid repository is required' },
         { status: 400 }
       );
     }
@@ -259,9 +303,9 @@ export async function GET(request: NextRequest) {
 
     // Check cache first
     const cacheKey = createCacheKey(
-      'summary',
+      'summary-account',
       session.user.username || 'anonymous',
-      repo,
+      repoNames.sort().join('|'),
       period
     );
     const cached = cache.get<ActivitySummary>(cacheKey);
@@ -276,11 +320,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Fetch repository activities
-    const { issues, pulls, commits } = await fetchRepositoryActivities(
+    // Fetch activities across all repos
+    const { issues, pulls, commits } = await fetchMultiRepoActivities(
       session.accessToken,
-      repoInfo.owner,
-      repoInfo.repo,
+      repoInfos,
       days
     );
 
@@ -289,14 +332,14 @@ export async function GET(request: NextRequest) {
 
     let summary: string;
     if (totalActivities === 0) {
-      summary = `No new activities found in the "${repo}" repository during the last ${days} days. The repository appears to be in a stable state with no recent issues, pull requests, or commits.`;
+      summary = `No new activities found across your repositories during the last ${days} days. Your account appears to be in a quiet period with no recent issues, pull requests, or commits.`;
     } else {
       // Generate AI summary
       summary = await generateAISummary(
         issues,
         pulls,
         commits,
-        repo,
+        repoNames,
         `${days} days`
       );
     }
@@ -323,7 +366,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Activity Summary by AI API error:', error);
+    logger.error('Activity Summary by AI API error:', error);
 
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
